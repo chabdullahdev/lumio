@@ -106,7 +106,7 @@ Alternative (CLI): `supabase login`, then
 
 Migrations live in `supabase/migrations/` and are applied in filename order.
 The schema was reviewed read-only against the live project on 16 October 2026
-(review below); **all seven migrations are applied and verified** on the
+(review below); **all eight migrations are applied and verified** on the
 development project — see the apply record after the table.
 
 **Review outcome (16 October 2026)**
@@ -141,12 +141,13 @@ development project — see the apply record after the table.
 | 05 | `..._05_lessons.sql` | `lessons`, `lesson_takeaways`, `lesson_sources` (claim-level traceability), `lesson_concepts` |
 | 06 | `..._06_learning_progress.sql` | `lesson_queue` (max 3 prepared, deduped), progress, covered concepts, `reading_activity`, `user_streaks` |
 | 07 | `..._07_jobs_and_review.sql` | `jobs` (durable, idempotent, retryable), `job_events`, `review_items`, private storage buckets |
+| 08 | `..._08_function_hygiene.sql` | `set_updated_at` explicit empty `search_path`; client EXECUTE revoked on `handle_new_user` (signup trigger unaffected) |
 
 **Apply record (16 October 2026)** — applied via the Supabase MCP
 `apply_migration` tool: one call per file, in filename order, each preceded by
 a byte-level checksum of the local file and followed by object and history
-checks. No errors; history holds all seven entries (server-assigned versions,
-our names preserved). Server-side verification after all seven:
+checks. No errors; history holds all eight entries (server-assigned versions,
+our names preserved). Server-side verification after all eight:
 
 - 23 tables, 13 enums, 20 RLS policies — every policy granted `to
   authenticated` only (zero for `anon`; the `categories` read policy and the
@@ -162,15 +163,14 @@ our names preserved). Server-side verification after all seven:
   `vector_cosine_ops`).
 - Advisors: no high-risk findings. INFO notes are the expected ones ("RLS
   enabled, no policy" ×11 for the service-only tables; "unused index" ×29 on
-  the empty database; "unindexed foreign key" ×9). Two WARN-level items are
-  function hygiene — `set_updated_at` has a mutable search path, and
-  `handle_new_user()` is executable by client roles (both are trigger-only
-  functions, so practical exposure is minimal; the platform's own
-  `rls_auto_enable()` carries the same client-execute lint and is left
-  untouched). Both can be silenced by a small follow-up migration:
-  `alter function … set search_path` and
-  `revoke execute … from anon, authenticated` (trigger firing does not depend
-  on the EXECUTE grant).
+  the empty database; "unindexed foreign key" ×9). The two WARN-level function
+  hygiene items were cleared by migration 08 (16 Oct 2026): `set_updated_at`
+  now runs with `search_path = ''`, and EXECUTE on `handle_new_user()` was
+  revoked from PUBLIC, `anon`, and `authenticated` — trigger invocation does
+  not check the EXECUTE grant, so the signup trigger keeps firing (verified:
+  trigger unchanged and enabled, all 12 `updated_at` triggers intact). The
+  platform's own `rls_auto_enable()` carries the remaining client-execute lint
+  and is deliberately left untouched.
 
 Still to do when the first real account exists (no test user was created):
 smoke-check that sign-up creates the `profiles` row and that an authenticated
@@ -193,7 +193,7 @@ destructive operations without explicit approval.
 
 ## 6. Known limitations / current state
 
-- **Schema applied and verified** → all seven migrations are live on the
+- **Schema applied and verified** → all eight migrations are live on the
   development project (16 Oct 2026, §4): 23 tables, 20 RLS policies (all
   `to authenticated`), service-only tables deny-by-default, three private
   storage buckets, signup trigger and HNSW vector index confirmed, no

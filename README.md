@@ -53,7 +53,7 @@ npm run validate:migrations      # parse all SQL migrations with PostgreSQL's re
 ## Status
 
 Phase 1 (foundation) is in place: app shell with configuration + Supabase
-client, backend environment tooling, and the database schema. All seven
+client, backend environment tooling, and the database schema. All eight
 migrations are **applied and verified** on the development Supabase project
 (16 Oct 2026): RLS policies in place, private storage buckets created, no
 high-risk advisor findings ([docs/SETUP.md](docs/SETUP.md) has the record).
