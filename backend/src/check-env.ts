@@ -16,6 +16,9 @@ function main(): number {
       `  SUPABASE_SERVICE_ROLE_KEY set (${config.supabaseServiceRoleKey.length} characters)`,
     );
     console.log(`  OLLAMA_BASE_URL          ${config.ollamaBaseUrl}`);
+    console.log(`  OLLAMA_MODEL             ${config.ollamaModel}`);
+    console.log(`  OLLAMA_TIMEOUT_MS        ${config.ollamaTimeoutMs}`);
+    console.log(`  WORKER_POLL_MS           ${config.workerPollMs}`);
     return 0;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

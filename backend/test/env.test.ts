@@ -74,6 +74,43 @@ test('warns when Ollama is not on loopback', () => {
   }
 });
 
+test('defaults model, timeout, and poll interval; accepts overrides', () => {
+  const defaults = parseBackendEnv({ ...VALID });
+  assert.equal(defaults.ok, true);
+  if (defaults.ok) {
+    assert.equal(defaults.config.ollamaModel, 'qwen3.5:9b');
+    assert.equal(defaults.config.ollamaTimeoutMs, 600_000);
+    assert.equal(defaults.config.workerPollMs, 15_000);
+  }
+
+  const overridden = parseBackendEnv({
+    ...VALID,
+    OLLAMA_MODEL: 'llama3.2:3b',
+    OLLAMA_TIMEOUT_MS: '120000',
+    WORKER_POLL_MS: '5000',
+  });
+  assert.equal(overridden.ok, true);
+  if (overridden.ok) {
+    assert.equal(overridden.config.ollamaModel, 'llama3.2:3b');
+    assert.equal(overridden.config.ollamaTimeoutMs, 120_000);
+    assert.equal(overridden.config.workerPollMs, 5_000);
+  }
+});
+
+test('rejects invalid timeout and poll values', () => {
+  const result = parseBackendEnv({
+    ...VALID,
+    OLLAMA_TIMEOUT_MS: 'soon',
+    WORKER_POLL_MS: '10000000',
+  });
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.ok(result.errors.some(error => error.includes('OLLAMA_TIMEOUT_MS')));
+    assert.ok(result.errors.some(error => error.includes('WORKER_POLL_MS')));
+  }
+});
+
 test('isPublishableOrAnonKey classifies key formats', () => {
   assert.equal(isPublishableOrAnonKey('sb_publishable_abc'), true);
   assert.equal(isPublishableOrAnonKey('header.eyJyb2xlIjoiYW5vbiJ9.sig'), true);

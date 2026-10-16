@@ -9,12 +9,14 @@
   },
   "scripts": {
     "check": "node --env-file-if-exists=.env src/check-env.ts",
+    "worker": "node --env-file-if-exists=.env src/worker/main.ts",
     "test": "node --test",
     "typecheck": "tsc --noEmit",
     "validate:migrations": "node scripts/validate-migrations.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.118.0"
+    "@supabase/supabase-js": "2.118.0",
+    "undici": "7.30.1"
   },
   "devDependencies": {
     "@types/node": "26.6.5",

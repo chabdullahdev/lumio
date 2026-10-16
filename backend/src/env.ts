@@ -10,6 +10,12 @@ export type BackendConfig = {
   supabaseUrl: string;
   supabaseServiceRoleKey: string;
   ollamaBaseUrl: string;
+  /** Ollama model used for lesson generation. */
+  ollamaModel: string;
+  /** Abort a single generation call after this many milliseconds. */
+  ollamaTimeoutMs: number;
+  /** Idle sleep between worker polls, in milliseconds. */
+  workerPollMs: number;
 };
 
 export type ParseBackendEnvResult =
@@ -17,6 +23,9 @@ export type ParseBackendEnvResult =
   | { ok: false; errors: string[]; warnings: string[] };
 
 const DEFAULT_OLLAMA_BASE_URL = 'http://127.0.0.1:11434';
+const DEFAULT_OLLAMA_MODEL = 'qwen3.5:9b';
+const DEFAULT_OLLAMA_TIMEOUT_MS = 600_000;
+const DEFAULT_WORKER_POLL_MS = 15_000;
 
 const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1']);
 
@@ -30,6 +39,23 @@ export function parseBackendEnv(
   const supabaseUrl = env.SUPABASE_URL?.trim() ?? '';
   const supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? '';
   const ollamaBaseUrl = env.OLLAMA_BASE_URL?.trim() || DEFAULT_OLLAMA_BASE_URL;
+  const ollamaModel = env.OLLAMA_MODEL?.trim() || DEFAULT_OLLAMA_MODEL;
+  const ollamaTimeoutMs = parsePositiveInt(
+    env.OLLAMA_TIMEOUT_MS,
+    DEFAULT_OLLAMA_TIMEOUT_MS,
+    1_000,
+    3_600_000,
+    'OLLAMA_TIMEOUT_MS',
+    errors,
+  );
+  const workerPollMs = parsePositiveInt(
+    env.WORKER_POLL_MS,
+    DEFAULT_WORKER_POLL_MS,
+    1_000,
+    600_000,
+    'WORKER_POLL_MS',
+    errors,
+  );
 
   if (!supabaseUrl) {
     errors.push(
@@ -60,7 +86,39 @@ export function parseBackendEnv(
   if (errors.length > 0) {
     return { ok: false, errors, warnings };
   }
-  return { ok: true, config: { supabaseUrl, supabaseServiceRoleKey, ollamaBaseUrl }, warnings };
+  return {
+    ok: true,
+    config: {
+      supabaseUrl,
+      supabaseServiceRoleKey,
+      ollamaBaseUrl,
+      ollamaModel,
+      ollamaTimeoutMs,
+      workerPollMs,
+    },
+    warnings,
+  };
+}
+
+/** Parse an optional positive integer env var, clamping to a sane range. */
+function parsePositiveInt(
+  raw: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+  name: string,
+  errors: string[],
+): number {
+  const trimmed = raw?.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  const value = Number(trimmed);
+  if (!Number.isInteger(value) || value < min || value > max) {
+    errors.push(`${name} must be an integer between ${min} and ${max} (got "${trimmed}").`);
+    return fallback;
+  }
+  return value;
 }
 
 /** Load and validate `process.env`, throwing a readable error when invalid. */
