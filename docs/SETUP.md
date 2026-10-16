@@ -78,6 +78,53 @@ npm run check                    # validates configuration; prints no secrets
 | `SUPABASE_URL` | same project URL as the app |
 | `SUPABASE_SERVICE_ROLE_KEY` | **server side only** — bypasses RLS. Starts with `sb_secret_…` or is a service_role JWT (legacy). |
 | `OLLAMA_BASE_URL` | defaults to `http://127.0.0.1:11434`; must not be publicly reachable |
+| `OLLAMA_MODEL` | defaults to `qwen3.5:9b` |
+| `OLLAMA_TIMEOUT_MS` | abort a single generation call after this long (default 600000 = 10 min) |
+| `WORKER_POLL_MS` | idle sleep between worker polls (default 15000) |
+
+### Running the lesson worker
+
+```bash
+cd backend
+npm run worker                   # poll loop; Ctrl+C to stop
+npm run worker -- --once         # one pass (useful while testing)
+```
+
+Each pass: `enqueue_replenish_jobs` (gives every onboarded user below three
+queued lessons one generation job) → `claim_jobs` → generate → validate →
+store → `complete_job`. Failures retry with backoff (30 s doubling, capped at
+20 min) up to 5 attempts, then the job is marked *dead* for inspection.
+
+**Dead jobs and insufficient material.** If the approved library cannot
+support a user's interests, the job is marked dead immediately
+(`dead_letter_job`) and **keeps its idempotency key** — reconciliation then
+stops creating jobs for that user so nothing churns. This is deliberate: dead
+jobs are the signal that a human should extend the library. To retry after
+fixing the library, clear the failure state, for example:
+
+```sql
+update public.jobs
+   set status = 'queued', run_at = now(), locked_at = null, locked_by = null, finished_at = null
+ where idempotency_key = 'replenish:<user-id>';
+```
+
+### Generating one lesson offline
+
+For reviewing lesson quality without a service-role key there is a
+DB-free preview path:
+
+1. Export candidate data for a user as JSON (a `CandidateData` document — see
+   `backend/src/lessons/candidates.ts`) using any SQL console.
+2. Run:
+
+```bash
+node scripts/generate-preview.ts path/to/candidate-data.json --out lesson.json
+```
+
+It runs the real pipeline (selection → prompt → Ollama → validation) and
+writes the validated lesson plus its plan (passage/concept ids) to
+`lesson.json`. Exit code 2 = insufficient material, 3 = generation/validation
+failure (the raw output is printed for inspection).
 
 Checks:
 
@@ -106,8 +153,8 @@ Alternative (CLI): `supabase login`, then
 
 Migrations live in `supabase/migrations/` and are applied in filename order.
 The schema was reviewed read-only against the live project on 16 October 2026
-(review below); **all eight migrations are applied and verified** on the
-development project — see the apply record after the table.
+(review below); **all twelve migrations are applied and verified** on the
+development project — see the two apply records after the table.
 
 **Review outcome (16 October 2026)**
 
@@ -142,6 +189,12 @@ development project — see the apply record after the table.
 | 06 | `..._06_learning_progress.sql` | `lesson_queue` (max 3 prepared, deduped), progress, covered concepts, `reading_activity`, `user_streaks` |
 | 07 | `..._07_jobs_and_review.sql` | `jobs` (durable, idempotent, retryable), `job_events`, `review_items`, private storage buckets |
 | 08 | `..._08_function_hygiene.sql` | `set_updated_at` explicit empty `search_path`; client EXECUTE revoked on `handle_new_user` (signup trigger unaffected) |
+| 09 | `..._09_learning_loop.sql` | completion trigger (activity, streak, concepts, queue close, replenishment job) + job protocol (`claim_jobs`/`complete_job`/`fail_job`) + reconciliation (`enqueue_replenish_jobs`) |
+| 10 | `..._10_seed_subjects.sql` | six approved top-level subjects (Science, History, Psychology, Islam, Geopolitics, Politics) |
+| 11 | `..._11_seed_library.sql` | generated starter library: 7 sources, 12 concepts, 69 passages, 118 passage–concept links (see provenance below) |
+| 12 | `..._12_dead_letter_jobs.sql` | `dead_letter_job`: terminal failure on first attempt, keeps the idempotency key to stop reconciliation churn |
+| 13 | `..._13_lesson_source_reads.sql` | owner-scoped read policies on `sources`/`licensing_records`/`passages` so the reader can show a lesson's source attribution (found by end-to-end testing under RLS) |
+| 14 | `..._14_job_search_path.sql` | explicit `set search_path = ''` on the job-protocol functions (advisor hygiene; behaviour unchanged) |
 
 **Apply record (16 October 2026)** — applied via the Supabase MCP
 `apply_migration` tool: one call per file, in filename order, each preceded by
@@ -176,6 +229,74 @@ Still to do when the first real account exists (no test user was created):
 smoke-check that sign-up creates the `profiles` row and that an authenticated
 session cannot read `passages` or other users' rows.
 
+**Apply record #2 (16–17 October 2026) — migrations 09–14.** Applied via the
+Supabase MCP `apply_migration` tool in filename order. Server-side
+verification after applying:
+
+- 6 approved top-level categories; 7 `ready` sources each with an approved
+  licensing record; 12 concepts; 69 passages; 118 passage–concept links.
+- `on_lesson_completed` trigger enabled; job functions (`claim_jobs`,
+  `complete_job`, `fail_job`, `enqueue_replenish_jobs`, `dead_letter_job`)
+  present with EXECUTE revoked from `anon`/`authenticated` (checked via
+  `has_function_privilege`).
+- **End-to-end checks with a real user session** (a confirmed signup via the
+  public auth API, then PostgREST calls with the user's JWT):
+  - reads: 6 approved categories visible; `passages`/`jobs` return zero rows;
+  - hostile writes all rejected (HTTP 403, SQLSTATE 42501): inserting
+    `passages`, `lessons`, `reading_activity`, `user_streaks`, and RPC calls
+    to `claim_jobs`/`dead_letter_job`;
+  - a `user_interests` row pointing at a non-existent category is rejected;
+  - `enqueue_replenish_jobs` created exactly one job for the onboarded user
+    and a second call created none (idempotency);
+  - `claim_jobs` claimed the job (attempts + 1); a second worker got nothing;
+  - `fail_job`: first failure requeued with ~30 s backoff; failure at
+    `max_attempts` produced `dead`;
+  - `dead_letter_job`: immediate `dead`, idempotency key **kept**, `job_events`
+    row written; reconciliation inserted nothing while the key was held
+    (anti-churn), and after putting the job back to `queued` it was claimable
+    again (documented recovery path);
+  - a stale `running` lock (40 minutes old) was reclaimed by another worker
+    with attempts incremented.
+- **End-to-end testing found and fixed a real RLS gap** (migration 13):
+  `lesson_sources` could be read by owners, but the embedded `sources`,
+  `licensing_records`, and `passages` rows were service-only, so the reader's
+  source attribution silently came back empty. Migration 13 adds
+  owner-scoped policies (visible only while referenced by one of the
+  reader's own lessons); verified afterwards: attribution resolves, and a
+  passage not used by the user's lessons is still invisible.
+- **Advisors after migrations 09–14** (17 Oct 2026): security — no
+  high-risk findings. Remaining WARNs: the platform's own `rls_auto_enable()`
+  (client-executable SECURITY DEFINER helper, not ours — left untouched) and
+  *Leaked Password Protection Disabled*, which is an Auth dashboard setting
+  (Authentication → password protection; worth enabling before real users).
+  The function-search-path warning on the new job functions was cleared by
+  migration 14. Performance — two INFO items only. Eight tables still show
+  "RLS enabled, no policy" by design (the service-only library/job tables,
+  checked directly against `pg_policies`).
+- **Real end-to-end lesson (17 Oct 2026).** One lesson was generated through
+  the real pipeline: `backend/scripts/generate-preview.ts` planned from the
+  live library (Science — Photosynthesis + Primary production, 7 passages,
+  1624 source words), `qwen3.5:9b` produced an 853-word lesson in 430 s
+  (≈7 min; the worker's default Ollama timeout is 10 min), and it passed
+  validation first try. It was then stored exactly as `generate.ts` does
+  (`generating` → child rows → queue → `ready`, with the job checkpointed and
+  completed). Verified afterwards with the test user's session: home shows the
+  lesson as next; the reader queries return 12 blocks, 4 takeaways, and 7
+  source rows with CC BY-SA attribution; completing it kept the same-day
+  streak at 1, raised the day's count to 2, bumped both covered concepts to
+  *twice covered*, closed the queue row, and enqueued the next replenishment
+  job (the previous key had been freed by `complete_job`).
+
+**Seeded library provenance (migration 11).** The starter library is seven
+Wikipedia articles frozen as a committed snapshot
+(`supabase/seed/wikipedia-extracts.json`) and generated into SQL by
+`backend/scripts/build-library-seed.mjs` (reruns reproduce byte-identical
+SQL). All extracts are CC BY-SA 4.0; each source row stores the attribution
+and licence, and the app shows the source line on every lesson. This is
+**development seed data** — replace with properly reviewed library ingestion
+before production. The generator never lets a source without an approved
+licensing record be used for a lesson.
+
 Rules: never edit a migration that has been applied — add a new one. No
 destructive operations without explicit approval.
 
@@ -193,19 +314,33 @@ destructive operations without explicit approval.
 
 ## 6. Known limitations / current state
 
-- **Schema applied and verified** → all eight migrations are live on the
-  development project (16 Oct 2026, §4): 23 tables, 20 RLS policies (all
-  `to authenticated`), service-only tables deny-by-default, three private
-  storage buckets, signup trigger and HNSW vector index confirmed, no
-  high-risk advisor findings. The connected project is for development only —
-  provision a separate production project (and apply these migrations there)
-  before real users.
+- **The whole core journey is built** (app): welcome/sign-in, interest
+  onboarding, home with three prepared lessons, reader with progress saving,
+  takeaways, completion, explore, profile. Sample mode works with no backend
+  at all; live mode runs against Supabase under RLS.
+- **Learning loop is live in the database** (migrations 09 + 12): completion
+  side effects and the durable job protocol are verified with a real user
+  (see apply record #2 above).
+- **Lesson generation worker requires the service-role key.** Everything in
+  `backend/` is written and unit-tested, but `npm run worker` cannot run until
+  `backend/.env` contains `SUPABASE_SERVICE_ROLE_KEY` (Dashboard → Project
+  Settings → API keys). This is the one external step left.
 - **Native rebuild pending** → `@react-native-async-storage/async-storage` was
-  added; reopen the project in Ship Studio once to rebuild.
+  added; reopen the project in Ship Studio once to rebuild. Pure JS/TS changes
+  hot-reload.
+- **Test account (development only)** → `lumio.e2e.<timestamp>@gmail.com`
+  (see the Supabase dashboard → Authentication → Users; the password was
+  generated during testing — reset it there, or delete the account). Its
+  interest data and progress exist only to exercise the loop.
+- **Seeded library is development material** → Wikipedia extracts (CC BY-SA
+  4.0) with per-source attribution; replace with reviewed ingestion before
+  production. Only six subjects are covered, which is enough for the loop but
+  not for variety.
 - `npm run validate:migrations` checks **syntax only** (real PostgreSQL
   grammar via libpg_query). Semantic checks happen against the server after
   applying.
 - The app is still named `ReactNativeStarter` in `app.json` and the native
-  projects; renaming is a small native change scheduled for the mobile phase.
-- No authentication, onboarding, or lesson screens yet — later phases.
-- Embedding model for Ollama is not pulled yet (needed for the retrieval phase).
+  projects; renaming is a small native change.
+- Embedding model for Ollama is not pulled yet (needed for the retrieval
+  phase). Passage embeddings are not generated yet; lesson selection uses
+  concept links instead.

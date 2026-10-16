@@ -13,11 +13,12 @@ knowledge library.
 
 | Path | What it is |
 | --- | --- |
-| `App.tsx`, `src/` | The React Native app (screens, theme, Supabase client, config) |
+| `App.tsx`, `src/` | The React Native app (screens, state, Supabase client, theme) |
 | `__tests__/`, `src/**/__tests__/` | Jest tests |
-| `backend/` | Node.js background workers (ingestion, embeddings, lesson generation) |
-| `backend/scripts/` | Tooling, e.g. SQL migration validation |
+| `backend/` | Node.js background workers (lesson generation, queue replenishment) |
+| `backend/scripts/` | Tooling: migration validation, library seed generation, offline lesson preview |
 | `supabase/migrations/` | Versioned PostgreSQL schema (applied and verified on the development project) |
+| `supabase/seed/` | Frozen source snapshot behind the seeded library (CC BY-SA; see `docs/SETUP.md`) |
 | `docs/` | Setup and architecture notes |
 | `ios/`, `android/` | Native projects — managed by Ship Studio, avoid hand-editing |
 | `agent.md` | Development working agreement |
@@ -52,9 +53,18 @@ npm run validate:migrations      # parse all SQL migrations with PostgreSQL's re
 
 ## Status
 
-Phase 1 (foundation) is in place: app shell with configuration + Supabase
-client, backend environment tooling, and the database schema. All eight
-migrations are **applied and verified** on the development Supabase project
-(16 Oct 2026): RLS policies in place, private storage buckets created, no
-high-risk advisor findings ([docs/SETUP.md](docs/SETUP.md) has the record).
-Next: fill the `.env` files, then the auth and onboarding screens.
+The core journey is built end to end: welcome → sign in → interest onboarding →
+home with three prepared lessons → reader with progress saving → takeaways →
+completion (streak, activity, concepts, queue replenishment). The app runs in
+**sample mode** (labelled placeholder lessons) until Supabase is configured,
+then switches to **live mode** against the real database.
+
+Database: migrations 01–14 are **applied and verified** on the development
+Supabase project (16–17 Oct 2026), including the seeded starter library
+(6 subjects, 7 rights-reviewed sources, 12 concepts, 69 passages) and the
+server-side learning loop (completion trigger + durable job protocol). The
+loop was exercised end to end: a real lesson was generated with local Ollama,
+stored, read through RLS as a test user, completed, and the next generation
+job was enqueued. Running the worker itself needs the service-role key in
+`backend/.env` ([docs/SETUP.md](docs/SETUP.md) has the record and
+instructions).

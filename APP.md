@@ -20,15 +20,21 @@ knowledge library.
 People who want to learn regularly but don't want to search for books, build a
 curriculum, or feel bad about missing a day.
 
-## Screens plan (built in later phases)
+## Screens (built)
 
-1. Welcome / sign in
+1. Welcome / sign in — email + password, or explore sample lessons
 2. Onboarding — choose broad interests
 3. Home — next recommended lesson, streak, upcoming lessons
-4. Reader — the lesson itself
-5. Takeaways / completion — key takeaways and completion confirmation
+4. Reader — block-by-block reading, progress saved as you go
+5. Takeaways / completion — key takeaways, sources, completion summary
 6. Explore — selected topics and their next available lessons
-7. Profile — interests, reading time, notifications, streak history
+7. Profile — interests, reading time, reminders, streak history
+
+The app has two data modes. **Sample mode** (bundled, clearly-labelled
+placeholder lessons) runs when Supabase is not configured, so the whole flow
+is usable without any backend. **Live mode** talks to Supabase with the
+publishable key under Row Level Security; lesson generation happens in the
+backend worker, never in the app.
 
 ## Brand
 
@@ -39,9 +45,9 @@ curriculum, or feel bad about missing a day.
 ## Technical summary
 
 - **Mobile app:** bare React Native + TypeScript (built and previewed by Ship Studio).
-- **Backend workers:** Node.js + TypeScript in `backend/` — book ingestion, embeddings, concept extraction, lesson generation, queue replenishment.
+- **Backend workers:** Node.js + TypeScript in `backend/` — lesson generation, queue replenishment. Runs alongside the developer's machine; holds the service-role key.
 - **Data:** Supabase (PostgreSQL + Storage). Schema lives in `supabase/migrations/`.
-- **AI:** local Ollama models on the developer's machine, never exposed to the internet.
+- **AI:** local Ollama models on the developer's machine, never exposed to the internet. The model only ever receives the extracts handed to it by the worker, and everything it returns is validated before storage.
 
 ## Getting started
 
@@ -55,6 +61,7 @@ cd backend
 npm install
 copy .env.example .env           # then fill in Supabase URL + service-role key
 npm run check                    # validates the backend environment
+npm run worker                   # generates lessons for onboarded users
 ```
 
 ## Checks
