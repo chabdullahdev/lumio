@@ -1,0 +1,24 @@
+{
+  "name": "lumio-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LUMIO background workers: book ingestion, knowledge extraction, lesson generation, queue replenishment. Runs beside the developer's machine against Supabase.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.11.0"
+  },
+  "scripts": {
+    "check": "node --env-file-if-exists=.env src/check-env.ts",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "validate:migrations": "node scripts/validate-migrations.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "pgsql-parser": "18.2.12",
+    "typescript": "5.9.3"
+  }
+}
