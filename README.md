@@ -1,38 +1,59 @@
-# React Native Starter
+# LUMIO
 
-Build iOS and Android apps with your AI agent. Powered by bare [React Native](https://reactnative.dev) — full control over the native projects.
+**Less scrolling. More understanding.**
 
-## What is this?
+AI-powered personalized learning for Android and iOS: short, source-grounded
+reading lessons selected for each user from a growing, rights-reviewed
+knowledge library.
 
-A minimal React Native app for building mobile apps with Claude Code inside [Ship Studio](https://www.ship.studio). Open the project and Ship Studio boots a simulator, builds the app, and shows it live in the preview pane — tap, swipe, and type right in the workspace. Just describe what you want, and your agent handles the code.
+- Product overview, screens plan, and brand: [APP.md](APP.md)
+- Full development setup: [docs/SETUP.md](docs/SETUP.md)
 
-Prefer not to manage native projects yourself? The Expo starter is the easier path — this one is for when you want direct access to `ios/` and `android/`.
+## Project layout
 
-## Getting Started
+| Path | What it is |
+| --- | --- |
+| `App.tsx`, `src/` | The React Native app (screens, theme, Supabase client, config) |
+| `__tests__/`, `src/**/__tests__/` | Jest tests |
+| `backend/` | Node.js background workers (ingestion, embeddings, lesson generation) |
+| `backend/scripts/` | Tooling, e.g. SQL migration validation |
+| `supabase/migrations/` | Versioned PostgreSQL schema (not applied yet) |
+| `docs/` | Setup and architecture notes |
+| `ios/`, `android/` | Native projects — managed by Ship Studio, avoid hand-editing |
+| `agent.md` | Development working agreement |
 
-Open the project in Ship Studio. `npm install` runs CocoaPods automatically (via the `postinstall` script), and the first build takes a few minutes — the build log streams in the app. After that, saved changes appear in the running app within seconds.
-
-**Requirements for the iOS preview:** macOS with Xcode and CocoaPods installed. Ship Studio's "Set up with AI" flow can walk you through this if anything's missing.
-
-## Project Structure
-
-```
-App.tsx          # The app — every screen starts here
-index.js         # Entry point
-ios/             # Native iOS project
-android/         # Native Android project
-__tests__/       # Jest tests
-CLAUDE.md        # Instructions for Claude Code
-```
-
-## Useful Commands
+## Quick start
 
 ```bash
-npm test             # Run tests
-npm run lint         # Lint
-npx tsc --noEmit     # Typecheck
+npm install                      # mobile app dependencies
+copy .env.example .env           # fill in Supabase URL + publishable key
+
+cd backend
+npm install
+copy .env.example .env           # fill in Supabase URL + service-role key
+npm run check                    # validates the backend environment
 ```
 
----
+The app builds and previews inside Ship Studio; see [docs/SETUP.md](docs/SETUP.md)
+for details, including how the database migrations will be applied.
 
-Built for use with [Claude Code](https://claude.com/claude-code)
+## Checks
+
+```bash
+npm run typecheck                # mobile app typecheck
+npm run lint                     # mobile app lint
+npm test                         # mobile app tests (jest)
+
+cd backend
+npm run typecheck
+npm test                         # node --test (TypeScript runs natively)
+npm run validate:migrations      # parse all SQL migrations with PostgreSQL's real parser
+```
+
+## Status
+
+Phase 1 (foundation) is in place: app shell with configuration + Supabase
+client, backend environment tooling, and the initial database schema as
+versioned migrations. The migrations have **not** been applied to Supabase
+yet — they await review and a signed-in Supabase connection
+(see [docs/SETUP.md](docs/SETUP.md)).
