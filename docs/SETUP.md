@@ -100,14 +100,14 @@ authentication** again:
 
 Alternative (CLI): `supabase login`, then
 `supabase link --project-ref kufcrqeobbjyblfcozvg`, then `supabase db push` /
-`supabase migration list` — only after the pre-flight in §4.
+`supabase migration list` (all migrations are already applied — see §4).
 
-## 4. Applying the database migrations (after review)
+## 4. Database migrations (applied and verified)
 
-Migrations live in `supabase/migrations/` and must be applied in filename
-order. They are **not applied yet**: the schema was reviewed read-only against
-the live project on 16 October 2026 and is cleared to apply — after one
-Dashboard pre-flight.
+Migrations live in `supabase/migrations/` and are applied in filename order.
+The schema was reviewed read-only against the live project on 16 October 2026
+(review below); **all seven migrations are applied and verified** on the
+development project — see the apply record after the table.
 
 **Review outcome (16 October 2026)**
 
@@ -125,12 +125,12 @@ Dashboard pre-flight.
 - Default privileges expose new `public` tables to `anon`/`authenticated`/
   `service_role`, so **RLS policies are the actual gate** — as designed.
   `service_role` bypasses RLS (backend only); `anon`/`authenticated` do not.
-- **Pre-flight required — enable pgvector first.** On this project `vector` is
-  superuser-only to install (`pg_available_extension_versions` reports
+- **Pre-flight (done before applying) — pgvector.** On this project `vector`
+  is superuser-only to install (`pg_available_extension_versions` reports
   `superuser = true`, `trusted = false`) and the migration role is not a
-  superuser. Enable it once at **Dashboard → Database → Extensions →
-  `vector`** (installs into the `extensions` schema); migration 01's
-  `create extension if not exists ...` then no-ops.
+  superuser. It was enabled once at **Dashboard → Database → Extensions →
+  `vector`** (installs into the `extensions` schema) before applying;
+  migration 01's `create extension if not exists ...` then no-oped.
 
 | # | File | Purpose |
 | --- | --- | --- |
@@ -142,18 +142,39 @@ Dashboard pre-flight.
 | 06 | `..._06_learning_progress.sql` | `lesson_queue` (max 3 prepared, deduped), progress, covered concepts, `reading_activity`, `user_streaks` |
 | 07 | `..._07_jobs_and_review.sql` | `jobs` (durable, idempotent, retryable), `job_events`, `review_items`, private storage buckets |
 
-Apply via the Supabase MCP `apply_migration` tool (one call per file, in
-order; pass the filename stem as the migration name) so history is recorded,
-or via the CLI — only after the pre-flight above. Apply one file, then verify
-before starting the next: expected objects exist, advisors stay clean,
-`list_migrations` shows the new entry; stop on the first error. After all
-seven:
+**Apply record (16 October 2026)** — applied via the Supabase MCP
+`apply_migration` tool: one call per file, in filename order, each preceded by
+a byte-level checksum of the local file and followed by object and history
+checks. No errors; history holds all seven entries (server-assigned versions,
+our names preserved). Server-side verification after all seven:
 
-1. Run the Supabase security and performance advisors. Expect, and accept,
-   "RLS enabled, no policy" for the service-only library tables and "unused
-   index" on empty tables (fresh indexes).
-2. Smoke checks: creating a test user produces a `profiles` row; a fresh
-   authenticated session cannot read `passages` or another user's rows.
+- 23 tables, 13 enums, 20 RLS policies — every policy granted `to
+  authenticated` only (zero for `anon`; the `categories` read policy and the
+  `user_interests` insert rule are exactly as reviewed). The 11 service-only
+  library and job tables have RLS on with no client policies (deny by
+  default).
+- `on_auth_user_created` on `auth.users` is enabled (AFTER INSERT FOR EACH
+  ROW); `handle_new_user` is `SECURITY DEFINER` with `search_path = ''`.
+- Storage: `library-originals`, `library-processed`, `licensing-evidence` —
+  all private; no storage policies (service-role access only).
+- The passage vector index is planner-usable: EXPLAIN of a cosine KNN query
+  shows `Index Scan using passages_embedding_idx` (HNSW,
+  `vector_cosine_ops`).
+- Advisors: no high-risk findings. INFO notes are the expected ones ("RLS
+  enabled, no policy" ×11 for the service-only tables; "unused index" ×29 on
+  the empty database; "unindexed foreign key" ×9). Two WARN-level items are
+  function hygiene — `set_updated_at` has a mutable search path, and
+  `handle_new_user()` is executable by client roles (both are trigger-only
+  functions, so practical exposure is minimal; the platform's own
+  `rls_auto_enable()` carries the same client-execute lint and is left
+  untouched). Both can be silenced by a small follow-up migration:
+  `alter function … set search_path` and
+  `revoke execute … from anon, authenticated` (trigger firing does not depend
+  on the EXECUTE grant).
+
+Still to do when the first real account exists (no test user was created):
+smoke-check that sign-up creates the `profiles` row and that an authenticated
+session cannot read `passages` or other users' rows.
 
 Rules: never edit a migration that has been applied — add a new one. No
 destructive operations without explicit approval.
@@ -172,10 +193,13 @@ destructive operations without explicit approval.
 
 ## 6. Known limitations / current state
 
-- **Schema not applied yet** → the seven migrations were reviewed against the
-  live project read-only (16 Oct 2026, §4) and are cleared to apply once
-  `vector` is enabled in the Dashboard. Everything shipped is local migration
-  files, parser-validated but not server-applied.
+- **Schema applied and verified** → all seven migrations are live on the
+  development project (16 Oct 2026, §4): 23 tables, 20 RLS policies (all
+  `to authenticated`), service-only tables deny-by-default, three private
+  storage buckets, signup trigger and HNSW vector index confirmed, no
+  high-risk advisor findings. The connected project is for development only —
+  provision a separate production project (and apply these migrations there)
+  before real users.
 - **Native rebuild pending** → `@react-native-async-storage/async-storage` was
   added; reopen the project in Ship Studio once to rebuild.
 - `npm run validate:migrations` checks **syntax only** (real PostgreSQL

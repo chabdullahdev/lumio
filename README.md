@@ -17,7 +17,7 @@ knowledge library.
 | `__tests__/`, `src/**/__tests__/` | Jest tests |
 | `backend/` | Node.js background workers (ingestion, embeddings, lesson generation) |
 | `backend/scripts/` | Tooling, e.g. SQL migration validation |
-| `supabase/migrations/` | Versioned PostgreSQL schema (not applied yet) |
+| `supabase/migrations/` | Versioned PostgreSQL schema (applied and verified on the development project) |
 | `docs/` | Setup and architecture notes |
 | `ios/`, `android/` | Native projects — managed by Ship Studio, avoid hand-editing |
 | `agent.md` | Development working agreement |
@@ -35,7 +35,7 @@ npm run check                    # validates the backend environment
 ```
 
 The app builds and previews inside Ship Studio; see [docs/SETUP.md](docs/SETUP.md)
-for details, including how the database migrations will be applied.
+for details, including how the database migrations were applied and verified.
 
 ## Checks
 
@@ -53,7 +53,8 @@ npm run validate:migrations      # parse all SQL migrations with PostgreSQL's re
 ## Status
 
 Phase 1 (foundation) is in place: app shell with configuration + Supabase
-client, backend environment tooling, and the initial database schema as
-versioned migrations. The migrations have **not** been applied to Supabase
-yet — they await review and a signed-in Supabase connection
-(see [docs/SETUP.md](docs/SETUP.md)).
+client, backend environment tooling, and the database schema. All seven
+migrations are **applied and verified** on the development Supabase project
+(16 Oct 2026): RLS policies in place, private storage buckets created, no
+high-risk advisor findings ([docs/SETUP.md](docs/SETUP.md) has the record).
+Next: fill the `.env` files, then the auth and onboarding screens.
