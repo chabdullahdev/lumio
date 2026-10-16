@@ -89,21 +89,48 @@ npm run validate:migrations      # parses every SQL migration with PostgreSQL's 
 
 ## 3. Supabase connection status
 
-The Supabase MCP server is configured in opencode (`~/.config/opencode/opencode.json`)
-but currently shows **needs authentication**. To connect it:
+Connected. The Supabase MCP server (configured in opencode,
+`~/.config/opencode/opencode.json`) is signed in to project
+`kufcrqeobbjyblfcozvg` and was used for a **read-only review of the live
+project on 16 October 2026** (outcome in §4). If it ever shows **needs
+authentication** again:
 
 1. In opencode, run `/mcps`, select **supabase**, and sign in (browser flow).
 2. Reload/reopen the session so the Supabase tools load.
 
 Alternative (CLI): `supabase login`, then
-`supabase link --project-ref <ref>`, then use `supabase db push` /
-`supabase migration list`. Only after migration review (below).
+`supabase link --project-ref kufcrqeobbjyblfcozvg`, then `supabase db push` /
+`supabase migration list` — only after the pre-flight in §4.
 
 ## 4. Applying the database migrations (after review)
 
 Migrations live in `supabase/migrations/` and must be applied in filename
-order. They are **not applied yet** — the schema is proposed and awaits
-review + a connected Supabase session.
+order. They are **not applied yet**: the schema was reviewed read-only against
+the live project on 16 October 2026 and is cleared to apply — after one
+Dashboard pre-flight.
+
+**Review outcome (16 October 2026)**
+
+- The project is empty — no tables, views, enums, policies, buckets, edge
+  functions, branches, users, or migration history; advisors are clean. There
+  are **no name or data conflicts** with the migrations.
+- The environment matches the migrations' assumptions: PostgreSQL 17.11;
+  `extensions` schema present (owned by `postgres`); pgvector 0.8.2 available
+  (HNSW needs ≥ 0.5); `auth.uid()` present; `gen_random_uuid()` built in.
+- Privileges verified for the migration role (`postgres`): create in `public`
+  and `extensions`, create triggers and functions, reference `auth.users`,
+  insert storage buckets. The platform's `rls_auto_enable` helper also
+  auto-enables RLS on new `public` tables (our explicit enables stay
+  idempotent).
+- Default privileges expose new `public` tables to `anon`/`authenticated`/
+  `service_role`, so **RLS policies are the actual gate** — as designed.
+  `service_role` bypasses RLS (backend only); `anon`/`authenticated` do not.
+- **Pre-flight required — enable pgvector first.** On this project `vector` is
+  superuser-only to install (`pg_available_extension_versions` reports
+  `superuser = true`, `trusted = false`) and the migration role is not a
+  superuser. Enable it once at **Dashboard → Database → Extensions →
+  `vector`** (installs into the `extensions` schema); migration 01's
+  `create extension if not exists ...` then no-ops.
 
 | # | File | Purpose |
 | --- | --- | --- |
@@ -116,12 +143,17 @@ review + a connected Supabase session.
 | 07 | `..._07_jobs_and_review.sql` | `jobs` (durable, idempotent, retryable), `job_events`, `review_items`, private storage buckets |
 
 Apply via the Supabase MCP `apply_migration` tool (one call per file, in
-order) so migration history is recorded, or via the CLI. After applying:
+order; pass the filename stem as the migration name) so history is recorded,
+or via the CLI — only after the pre-flight above. Apply one file, then verify
+before starting the next: expected objects exist, advisors stay clean,
+`list_migrations` shows the new entry; stop on the first error. After all
+seven:
 
-1. Run the Supabase security and performance advisors; fix anything they flag.
-2. Smoke checks: tables exist; RLS enabled everywhere; creating a test user
-   produces a `profiles` row; a fresh authenticated session cannot read
-   `passages` or another user's rows.
+1. Run the Supabase security and performance advisors. Expect, and accept,
+   "RLS enabled, no policy" for the service-only library tables and "unused
+   index" on empty tables (fresh indexes).
+2. Smoke checks: creating a test user produces a `profiles` row; a fresh
+   authenticated session cannot read `passages` or another user's rows.
 
 Rules: never edit a migration that has been applied — add a new one. No
 destructive operations without explicit approval.
@@ -140,8 +172,10 @@ destructive operations without explicit approval.
 
 ## 6. Known limitations / current state
 
-- **Supabase MCP is not signed in** → schema not applied; all database work so
-  far is local migration files (validated by parser, not yet by the server).
+- **Schema not applied yet** → the seven migrations were reviewed against the
+  live project read-only (16 Oct 2026, §4) and are cleared to apply once
+  `vector` is enabled in the Dashboard. Everything shipped is local migration
+  files, parser-validated but not server-applied.
 - **Native rebuild pending** → `@react-native-async-storage/async-storage` was
   added; reopen the project in Ship Studio once to rebuild.
 - `npm run validate:migrations` checks **syntax only** (real PostgreSQL
