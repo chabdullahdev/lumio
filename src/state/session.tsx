@@ -18,6 +18,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured } from '../lib/env';
+import { signInWithGoogle as startGoogleSignIn } from '../lib/google-auth';
 import { getSupabase } from '../lib/supabase';
 import { sampleApi } from '../data/sample-api';
 import { supabaseApi } from '../data/supabase-api';
@@ -46,6 +47,8 @@ export type SessionState = {
   api: LumioApi;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
+  /** Opens Google in the browser; `cancelled` means the user backed out (no error to show). */
+  signInWithGoogle: () => Promise<AuthResult & { cancelled?: boolean }>;
   signOut: () => Promise<void>;
   enterSampleMode: () => Promise<void>;
   exitSampleMode: () => Promise<void>;
@@ -219,6 +222,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return { ok: true, needsConfirmation: true };
   }, [evaluateProfile]);
 
+  const signInWithGoogle = useCallback(async (): Promise<AuthResult & { cancelled?: boolean }> => {
+    const result = await startGoogleSignIn();
+    if (!result.ok) {
+      return result;
+    }
+    const { data, error } = await getSupabase().auth.getUser();
+    if (error || !data.user) {
+      return { ok: false, message: 'Signed in with Google, but could not load your account.' };
+    }
+    setUseSample(false);
+    await AsyncStorage.removeItem(SAMPLE_MODE_KEY);
+    await evaluateProfile(data.user.id, data.user.email ?? null);
+    return { ok: true };
+  }, [evaluateProfile]);
+
   const signOut = useCallback(async () => {
     await getSupabase().auth.signOut();
     setUserId(null);
@@ -261,6 +279,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       api,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       enterSampleMode,
       exitSampleMode,
@@ -276,6 +295,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       api,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
       enterSampleMode,
       exitSampleMode,

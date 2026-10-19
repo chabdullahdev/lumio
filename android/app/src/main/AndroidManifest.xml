@@ -24,6 +24,13 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- Google sign-in comes back to the app as lumio://auth/callback -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="lumio" android:host="auth" />
+        </intent-filter>
       </activity>
       <provider
         android:name="androidx.core.content.FileProvider"

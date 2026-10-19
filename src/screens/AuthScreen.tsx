@@ -17,7 +17,8 @@ export function AuthScreen({ mode }: { mode: 'signIn' | 'signUp' }) {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const navigation = useNavigation();
-  const { signIn, signUp } = useSession();
+  const { signIn, signUp, signInWithGoogle } = useSession();
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,6 +44,20 @@ export function AuthScreen({ mode }: { mode: 'signIn' | 'signUp' }) {
       // explicit navigation needed here.
     } finally {
       setBusy(false);
+    }
+  };
+
+  const submitGoogle = async () => {
+    setGoogleBusy(true);
+    setError(null);
+    try {
+      const result = await signInWithGoogle();
+      if (!result.ok && !result.cancelled) {
+        setError(result.message);
+      }
+      // On success the session provider takes over, as with email sign-in.
+    } finally {
+      setGoogleBusy(false);
     }
   };
 
@@ -76,8 +91,17 @@ export function AuthScreen({ mode }: { mode: 'signIn' | 'signUp' }) {
             label={isSignUp ? 'Create account' : 'Sign in'}
             onPress={() => submit()}
             loading={busy}
-            disabled={!email.trim() || password.length === 0}
+            disabled={!email.trim() || password.length === 0 || googleBusy}
           />
+          <View style={styles.googleButton}>
+            <PrimaryButton
+              label="Continue with Google"
+              variant="secondary"
+              onPress={() => submitGoogle()}
+              loading={googleBusy}
+              disabled={busy}
+            />
+          </View>
         </View>
       }
     >
@@ -141,6 +165,9 @@ function createStyles(theme: Theme) {
       fontSize: theme.type.small,
       lineHeight: 21,
       color: theme.colors.danger,
+    },
+    googleButton: {
+      marginTop: theme.spacing(3),
     },
     switch: {
       marginTop: theme.spacing(6),

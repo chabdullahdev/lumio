@@ -27,6 +27,8 @@ export function getSupabase(): SupabaseClient {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        // Google sign-in returns a one-time code through a deep link (see google-auth.ts).
+        flowType: 'pkce',
       },
     });
   }
