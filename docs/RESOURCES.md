@@ -13,7 +13,7 @@ sources, and reference documents. For where code lives see
 | **Vercel** | Hosts the landing page in `web/` | Root Directory `web`, framework preset **Other**. Live at https://lumio.mabdullahshahzad.com |
 | **GitHub** | Source code | `https://github.com/chabdullahdev/lumio` (branch `master`). The website redeploys from here. |
 | **Google (OAuth)** | "Continue with Google" | Configured in the Supabase Auth dashboard. |
-| **Project Gutenberg** | Public-domain books for the library | Fetched by `ingest-library.ts`. |
+| **Project Gutenberg** | Public-domain books for the library | Catalogue read and books fetched by the librarian (`discover-books.ts`) and `ingest-library.ts`. |
 | **Wikipedia** | Seed articles (CC BY-SA 4.0) | Frozen in `supabase/seed/wikipedia-extracts.json`. |
 
 ### Supabase pieces
@@ -59,6 +59,8 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | `OLLAMA_MODEL` | `qwen3.5:9b` | Model used to write lessons. |
 | `OLLAMA_TIMEOUT_MS` | `600000` | Abort one generation after this long. |
 | `WORKER_POLL_MS` | `15000` | Idle wait between polls. |
+| `LIBRARIAN_INTERVAL_MS` | `1800000` | Wait between librarian rounds (30 min). |
+| `LIBRARIAN_PICK` | `5` | Books the AI may choose per round. |
 
 ## Tools you need installed
 
@@ -94,7 +96,8 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 
 ## AI model
 
-- **Ollama** runs on the developer's machine, bound to `127.0.0.1`.
+- **Ollama** runs on the developer's machine, bound to `127.0.0.1`. The only model kept is `qwen3.5:9b` (`ollama pull qwen3.5:9b`).
+- The AI does two jobs: it **chooses new books and their concepts** (librarian) and **writes lessons** (worker). It never browses the internet; it only sees lists and passages the code hands it.
 - The model only receives passages chosen by the worker; its output is
   validated (structure, length, takeaways, source use) before storage.
 - Rough cost/time: one ~850-word lesson took about 7 minutes on `qwen3.5:9b`.

@@ -17,7 +17,7 @@
  *   ... --shortlist 40 --pick 8 --model gemma4:12b --refresh
  */
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CATEGORY_NAMES, BOOKS } from '../src/library/catalog.ts';
@@ -98,10 +98,32 @@ async function loadCatalog(dir: string, refresh: boolean): Promise<CatalogEntry[
   return parseCatalog(text);
 }
 
-/** Books already in the hand-written reading list are not candidates again. */
-function shortlistFor(grouped: Map<LumioCategory, CatalogEntry[]>, category: LumioCategory, size: number): CatalogEntry[] {
-  const known = new Set(BOOKS.map(book => book.gutenbergId));
-  return (grouped.get(category) ?? []).filter(entry => !known.has(entry.gutenbergId)).slice(0, size);
+/**
+ * Books the AI should not be shown again: the hand-written reading list, plus
+ * every book already picked or converted in an earlier round. This is what
+ * makes each round of the librarian find NEW books.
+ */
+async function alreadyHandled(dir: string): Promise<Set<number>> {
+  const handled = new Set(BOOKS.map(book => book.gutenbergId));
+  const curated: CuratedFile = JSON.parse((await readFile(join(dir, 'curated.json'), 'utf8').catch(() => '{}')) || '{}');
+  for (const picks of Object.values(curated)) {
+    for (const pick of picks) {
+      handled.add(pick.gutenbergId);
+    }
+  }
+  for (const name of await readdir(join(dir, 'books')).catch(() => [] as string[])) {
+    handled.add(Number(name));
+  }
+  return handled;
+}
+
+function shortlistFor(
+  grouped: Map<LumioCategory, CatalogEntry[]>,
+  category: LumioCategory,
+  size: number,
+  handled: Set<number>,
+): CatalogEntry[] {
+  return (grouped.get(category) ?? []).filter(entry => !handled.has(entry.gutenbergId)).slice(0, size);
 }
 
 async function installedModels(): Promise<string[]> {
@@ -128,9 +150,10 @@ async function curate(args: Args, grouped: Map<LumioCategory, CatalogEntry[]>): 
   };
   const file = join(args.dir, 'curated.json');
   const existing: CuratedFile = JSON.parse((await readFile(file, 'utf8').catch(() => '{}')) || '{}');
+  const handled = await alreadyHandled(args.dir);
 
   for (const category of args.category ? [args.category] : CATEGORY_NAMES) {
-    const candidates = shortlistFor(grouped, category, args.shortlist);
+    const candidates = shortlistFor(grouped, category, args.shortlist, handled);
     if (candidates.length === 0) {
       console.log(`  ${category}: no candidates`);
       continue;
@@ -138,10 +161,10 @@ async function curate(args: Args, grouped: Map<LumioCategory, CatalogEntry[]>): 
     console.log(`  ${category}: asking ${args.model} to choose from ${candidates.length} books...`);
     const reply = await chatJson(options, buildCuratePrompt(category, candidates, args.pick));
     const picks = parseCurateReply(reply, candidates, args.pick);
-    existing[category] = picks;
+    existing[category] = [...(existing[category] ?? []), ...picks];
     for (const pick of picks) {
       const entry = candidates.find(candidate => candidate.gutenbergId === pick.gutenbergId);
-      console.log(`     #${pick.gutenbergId} ${entry?.title.slice(0, 50)} — ${pick.concepts.join(', ')}`);
+      console.log(`     #${pick.gutenbergId} ${entry?.title.slice(0, 50)} — ${pick.concepts.map(concept => concept.name).join(', ')}`);
     }
     if (picks.length === 0) {
       console.log('     (the AI returned no valid picks)');
@@ -224,9 +247,10 @@ async function main(): Promise<void> {
   if (args.curate) {
     await curate(args, grouped);
   } else if (!args.fetch) {
+    const handled = await alreadyHandled(args.dir);
     for (const category of args.category ? [args.category] : CATEGORY_NAMES) {
       console.log(`\nShortlist for ${category} (what the AI would choose from):`);
-      for (const entry of shortlistFor(grouped, category, Math.min(args.shortlist, 10))) {
+      for (const entry of shortlistFor(grouped, category, Math.min(args.shortlist, 10), handled)) {
         console.log(`  #${entry.gutenbergId} ${entry.title.slice(0, 60)} — ${entry.authors.slice(0, 30)}`);
       }
     }

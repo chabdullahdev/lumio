@@ -112,7 +112,9 @@ Each pass:
 2. `claim_jobs` — take due jobs safely (no double-processing).
 3. Select passages → build prompt → ask Ollama → **validate** → store lesson,
    takeaways, sources → `complete_job`.
-4. On failure: retry with backoff (30 s doubling, capped at 20 min) up to 5
+4. If the local AI is not running, the worker **waits and logs it** instead of
+   claiming jobs, so no retry attempts are wasted.
+5. On failure: retry with backoff (30 s doubling, capped at 20 min) up to 5
    attempts, then the job is marked **dead**.
 
 **Dead jobs.** If the library can't support a user's interests, the job is
@@ -156,26 +158,66 @@ node scripts/generate-preview.ts path/to/candidate-data.json --out lesson.json
 
 ---
 
-### 5b. Finding new books automatically (script + local AI)
+### 5b. The librarian: finding new books automatically
 
-A script reads Project Gutenberg's official catalogue (all public domain), sorts
-books into the six LUMIO categories with plain rules, and your local AI chooses
-the best ones and the concepts each can teach. The AI can only pick real books
-from the list it is given; anything else it returns is discarded.
+A background program that keeps the library growing without you picking books.
+Plain code finds real public-domain books (Project Gutenberg's official
+catalogue); **your local AI chooses the best ones and the ideas each can teach**.
+The AI can only pick from the real list it is shown; anything invented is
+discarded. Gutenberg books are all US public domain, so the licence is recorded
+as approved automatically.
 
 ```bash
 cd backend
-node scripts/discover-books.ts                              # dry run: counts + shortlist per category
-node scripts/discover-books.ts --curate --model <installed> # AI chooses (Ollama must be running)
-node scripts/discover-books.ts --fetch                      # convert the AI's picks to files
+npm run librarian                       # keep going; Ctrl+C to stop
+npm run librarian -- --once             # one round, then stop
+npm run librarian -- --once --category History
 ```
 
-Options: `--category History`, `--shortlist 40` (books the AI sees), `--pick 8`
-(books it may choose), `--refresh` (re-download the catalogue). Output goes to
-`backend/library-data/` (not committed): `curated.json`, and per book a
-`book.md`, `book.json` (chapters + ~250-word passages) and `concepts.json`.
-Nothing is written to Supabase yet; saving converted books to the database is
-the next step.
+Each round it takes the next category in turn (Geopolitics, History, Islam,
+Politics, Psychology, Science) and:
+
+1. checks the local AI is running (waits and logs if not);
+2. the AI chooses up to 5 **new** books, with concepts and search words for each;
+3. the books are downloaded and converted to files;
+4. the books are saved to Supabase and their passages linked to the AI's
+   concepts. This step needs `backend/.env`; without it the librarian says so
+   and keeps the converted files for later.
+
+Then it sleeps (default 30 minutes) and repeats. Every step skips finished work,
+so stopping and restarting is always safe.
+
+Settings in `backend/.env` (optional): `LIBRARIAN_INTERVAL_MS` (default
+1800000) and `LIBRARIAN_PICK` (default 5).
+
+The steps can also be run one at a time:
+
+```bash
+npm run discover                                 # dry run: shortlist per category
+npm run discover -- --curate --category Islam    # AI chooses books
+npm run discover -- --fetch                      # convert the AI's picks to files
+npm run books:store                              # dry run: what would be saved
+npm run books:store -- --apply                   # save to Supabase
+```
+
+Options for `discover`: `--category`, `--shortlist 40` (books the AI sees),
+`--pick 8` (books it may choose), `--model <name>`, `--refresh` (re-download the
+catalogue). Files go to `backend/library-data/` (not committed): `curated.json`
+(all AI picks), and per book `book.md` (readable), `book.json` (chapters and
+~250-word passages), `concepts.json`, and `stored.json` once saved.
+
+**How concepts are linked.** The AI names the concepts and gives search words for
+each; the code then links each concept to the 12 best-matching passages. This is
+guided keyword matching, not the AI reading every passage, and it is fast. A
+book whose title is already in the library is skipped (Gutenberg often has
+several editions).
+
+**Keep the AI running.** Leave Ollama open (it should start at login). The lesson
+worker and the librarian both check it first and wait instead of failing.
+`npm run check` (in `backend/`) reports whether the AI and the model are ready.
+Run the librarian and the worker on only one computer at a time.
+
+---
 
 ## 6. Releasing an Android update
 

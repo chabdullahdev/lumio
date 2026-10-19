@@ -13,13 +13,20 @@
 import type { OllamaMessage } from '../ollama.ts';
 import type { CatalogEntry, LumioCategory } from './gutenberg-catalog.ts';
 
+/** A teachable idea plus the words that signal it in the book's text. */
+export type CuratedConcept = {
+  name: string;
+  keywords: string[];
+};
+
 export type CuratedPick = {
   gutenbergId: number;
   reason: string;
-  concepts: string[];
+  concepts: CuratedConcept[];
 };
 
 const MAX_CONCEPTS_PER_BOOK = 6;
+const MAX_KEYWORDS_PER_CONCEPT = 8;
 
 export function buildCuratePrompt(
   category: LumioCategory,
@@ -47,8 +54,8 @@ export function buildCuratePrompt(
       role: 'user',
       content: [
         `Category: ${category}`,
-        `Choose up to ${pick} books from the list below. For each, give 3 to ${MAX_CONCEPTS_PER_BOOK} short concept names (2-4 words each) that lessons could teach from it.`,
-        'Reply as: {"picks":[{"id":123,"reason":"one short sentence","concepts":["Concept one","Concept two"]}]}',
+        `Choose up to ${pick} books from the list below. For each, give 3 to ${MAX_CONCEPTS_PER_BOOK} concepts (names of 2-4 words) that lessons could teach from it, and for each concept 4 to ${MAX_KEYWORDS_PER_CONCEPT} single words or short phrases likely to appear in the book's own text when it discusses that concept.`,
+        'Reply as: {"picks":[{"id":123,"reason":"one short sentence","concepts":[{"name":"Concept one","keywords":["word","another phrase"]}]}]}',
         '',
         'id | title | author | subjects',
         list,
@@ -89,9 +96,8 @@ export function parseCurateReply(
       continue;
     }
     const cleanConcepts = (Array.isArray(concepts) ? concepts : [])
-      .filter((value): value is string => typeof value === 'string')
-      .map(value => value.trim())
-      .filter(value => value.length >= 3 && value.length <= 60)
+      .map(parseConcept)
+      .filter((value): value is CuratedConcept => value !== null)
       .slice(0, MAX_CONCEPTS_PER_BOOK);
     if (cleanConcepts.length === 0) {
       continue;
@@ -107,4 +113,35 @@ export function parseCurateReply(
     }
   }
   return out;
+}
+
+/** Accepts {name, keywords} or a bare name; keywords fall back to the name's words. */
+export function parseConcept(value: unknown): CuratedConcept | null {
+  const raw =
+    typeof value === 'string'
+      ? { name: value, keywords: [] as unknown[] }
+      : typeof value === 'object' && value !== null
+        ? (value as { name?: unknown; keywords?: unknown })
+        : null;
+  if (raw === null || typeof raw.name !== 'string') {
+    return null;
+  }
+  const name = raw.name.trim();
+  if (name.length < 3 || name.length > 60) {
+    return null;
+  }
+  const keywords = (Array.isArray(raw.keywords) ? raw.keywords : [])
+    .filter((word): word is string => typeof word === 'string')
+    .map(word => word.trim().toLowerCase())
+    .filter(word => word.length >= 3 && word.length <= 40)
+    .slice(0, MAX_KEYWORDS_PER_CONCEPT);
+  return { name, keywords: keywords.length > 0 ? keywords : fallbackKeywords(name) };
+}
+
+function fallbackKeywords(name: string): string[] {
+  const words = name
+    .toLowerCase()
+    .split(/[^a-z']+/)
+    .filter(word => word.length >= 4);
+  return words.length > 0 ? words : [name.toLowerCase()];
 }

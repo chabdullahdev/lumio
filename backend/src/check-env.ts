@@ -6,8 +6,9 @@
  * length — and exits non-zero when the configuration is invalid.
  */
 import { loadBackendEnv } from './env.ts';
+import { checkOllama } from './ollama-health.ts';
 
-function main(): number {
+async function main(): Promise<number> {
   try {
     const config = loadBackendEnv();
     console.log('LUMIO backend environment is valid.');
@@ -19,7 +20,9 @@ function main(): number {
     console.log(`  OLLAMA_MODEL             ${config.ollamaModel}`);
     console.log(`  OLLAMA_TIMEOUT_MS        ${config.ollamaTimeoutMs}`);
     console.log(`  WORKER_POLL_MS           ${config.workerPollMs}`);
-    return 0;
+    const health = await checkOllama(config.ollamaBaseUrl, config.ollamaModel);
+    console.log(`  Local AI                 ${health.ok ? 'ready' : `NOT READY - ${health.reason}`}`);
+    return health.ok ? 0 : 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     console.error('\nHint: copy backend/.env.example to backend/.env and fill in the values.');
@@ -27,4 +30,4 @@ function main(): number {
   }
 }
 
-process.exitCode = main();
+process.exitCode = await main();

@@ -9,6 +9,9 @@
   },
   "scripts": {
     "check": "node --env-file-if-exists=.env src/check-env.ts",
+    "discover": "node --env-file-if-exists=.env scripts/discover-books.ts",
+    "books:store": "node --env-file-if-exists=.env scripts/store-books.ts",
+    "librarian": "node --env-file-if-exists=.env scripts/librarian.ts",
     "worker": "node --env-file-if-exists=.env src/worker/main.ts",
     "test": "node --test",
     "typecheck": "tsc --noEmit",

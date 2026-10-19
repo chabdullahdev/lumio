@@ -17,6 +17,7 @@
 import { hostname } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { loadBackendEnv, type BackendConfig } from '../env.ts';
+import { checkOllama } from '../ollama-health.ts';
 import { getSupabaseAdmin } from '../supabase-admin.ts';
 import { InsufficientMaterialError, generateLessonForUser } from '../lessons/generate.ts';
 
@@ -173,11 +174,26 @@ async function main(): Promise<void> {
   log(`started as ${workerId} (model ${config.ollamaModel}, poll ${config.workerPollMs}ms)`);
   log(`supabase ${config.supabaseUrl}, ollama ${config.ollamaBaseUrl}`);
 
+  let waitingForOllama = false;
   do {
-    try {
-      await runOnce(config, workerId);
-    } catch (error) {
-      log(`pass failed: ${errorMessage(error)}`);
+    // Do not claim jobs while the local AI is down: they would only fail and
+    // use up retry attempts.
+    const health = await checkOllama(config.ollamaBaseUrl, config.ollamaModel);
+    if (!health.ok) {
+      if (!waitingForOllama) {
+        log(`waiting for the local AI: ${health.reason}`);
+        waitingForOllama = true;
+      }
+    } else {
+      if (waitingForOllama) {
+        log('the local AI is ready again; resuming');
+        waitingForOllama = false;
+      }
+      try {
+        await runOnce(config, workerId);
+      } catch (error) {
+        log(`pass failed: ${errorMessage(error)}`);
+      }
     }
     if (!once && !stopping) {
       await sleep(config.workerPollMs);

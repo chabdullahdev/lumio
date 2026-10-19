@@ -134,14 +134,17 @@ backend/
 │   ├── lessons/            candidates.ts (pick material), prompt.ts, generate.ts,
 │   │                       validate.ts, types.ts
 │   ├── library/            catalog.ts (reading list), epub.ts, passages.ts,
-│   │                       gutenberg-catalog.ts, curate.ts, book-files.ts
+│   │                       gutenberg-catalog.ts, curate.ts, book-files.ts, store.ts
 │   ├── ollama.ts           Client for the local AI model
+│   ├── ollama-health.ts    Is the local AI up and is the model installed?
 │   ├── supabase-admin.ts   Service-role Supabase client
 │   ├── env.ts              Loads and validates backend/.env
 │   └── check-env.ts        `npm run check` — prints status, never secrets
 ├── scripts/
 │   ├── ingest-library.ts       Add public-domain books to the library
+│   ├── librarian.ts            Loop: AI picks new books → convert → save, forever
 │   ├── discover-books.ts       Find books in Gutenberg's catalogue, AI picks, convert to files
+│   ├── store-books.ts          Save converted books + AI concepts into Supabase
 │   ├── plan-lessons.ts         Preview what lessons would be planned
 │   ├── generate-preview.ts     Generate one lesson offline from a JSON file
 │   ├── store-authored-lessons.ts  Store hand-authored lessons
