@@ -69,6 +69,7 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | `WORKER_POLL_MS` | `15000` | Idle wait between polls. |
 | `LIBRARIAN_INTERVAL_MS` | `1800000` | Wait between librarian rounds (30 min). |
 | `LIBRARIAN_PICK` | `5` | Books the AI may choose per round. |
+| `DEAD_JOB_RETRY_MS` | `3600000` | How long a dead lesson job waits before the worker retries it (1 hour). |
 | `LUMIO_AI_PLANNER` | on | Set to `off` to stop the AI choosing each user's next topic (rules only). |
 
 ## Tools you need installed

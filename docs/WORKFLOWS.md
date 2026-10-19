@@ -128,16 +128,28 @@ To switch the AI planner off and use only the rules, set
 6. On failure: retry with backoff (30 s doubling, capped at 20 min) up to 5
    attempts, then the job is marked **dead**.
 
-**Dead jobs.** If the library can't support a user's interests, the job is
-dead-lettered immediately and reconciliation stops retrying, on purpose. It's
-a signal to extend the library. After fixing it, requeue:
+**Dead jobs retry on their own.** A job is marked dead after 5 failed attempts, or at once
+if the library cannot support the reader's interests. A dead job keeps its idempotency key,
+which stops new jobs for that reader, so the worker now puts every dead lesson job back in
+the queue (with a fresh 5 attempts) once it has been dead for an hour. One bad day for the
+AI, or a library that was too small yesterday, no longer blocks a reader for good. Change
+the wait with `DEAD_JOB_RETRY_MS` in `backend/.env` (default 3600000). A job that keeps dying
+is still a signal: read its `last_error` in the `jobs` table.
 
-```sql
-update public.jobs
-   set status = 'queued', run_at = now(), locked_at = null,
-       locked_by = null, finished_at = null
- where idempotency_key = 'replenish:<user-id>';
-```
+**The AI's answer is repaired before it is checked.** If the model puts `takeaways` or
+`concepts_covered` inside the `blocks` list, or calls a block a "subheading" or "text", the
+worker moves or renames them instead of rejecting the lesson. Nothing is invented, and the
+repaired answer is still fully validated.
+
+**No new lessons after finishing? Check in this order:**
+
+1. Is the worker running? Lessons are only made while `npm run worker` is open on a computer
+   that has `backend/.env` **and** Ollama running with `qwen3.5:9b`. If it is closed, nothing is
+   made, however many lessons the reader finishes.
+2. Look at the `jobs` table for that reader: `queued`/`running` means it is on its way,
+   `dead` means it will be retried within an hour (or read `last_error`).
+3. Replacement lessons come for the **same subject** that was just finished, as long as the
+   reader's other subjects are still in their queue.
 
 **Testing quality without a database key:**
 ```bash

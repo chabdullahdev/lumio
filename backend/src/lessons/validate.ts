@@ -69,13 +69,62 @@ const MARKDOWN_PATTERNS: [RegExp, string][] = [
   [/\bhttps?:\/\b/, 'text must not contain URLs'],
 ];
 
+const HEADING_TYPES = new Set(['heading', 'subheading', 'h1', 'h2', 'h3', 'title', 'section']);
+const PARAGRAPH_TYPES = new Set(['paragraph', 'p', 'text', 'body', 'quote']);
+
+/**
+ * Fix the harmless shape mistakes a small model makes, so one slip does not
+ * throw away a whole lesson. It only moves or renames things; it never invents
+ * text, and the result is still fully validated afterwards.
+ *
+ *  - `takeaways` / `concepts_covered` written INSIDE the `blocks` list (seen
+ *    in a real failure) are moved up beside it;
+ *  - common synonyms for the block type ("subheading", "text", "quote"...)
+ *    become "heading" or "paragraph".
+ */
+export function repairLessonShape(value: unknown): unknown {
+  const root = asRow(value);
+  if (!root || !Array.isArray(root.blocks)) {
+    return value;
+  }
+  const repaired: Row = { ...root };
+  const blocks: unknown[] = [];
+  for (const rawBlock of root.blocks) {
+    const block = asRow(rawBlock);
+    if (!block) {
+      blocks.push(rawBlock);
+      continue;
+    }
+    const hasType = typeof block.type === 'string';
+    if (!hasType && (Array.isArray(block.takeaways) || Array.isArray(block.concepts_covered))) {
+      if (Array.isArray(block.takeaways) && !Array.isArray(repaired.takeaways)) {
+        repaired.takeaways = block.takeaways;
+      }
+      if (Array.isArray(block.concepts_covered) && !Array.isArray(repaired.concepts_covered)) {
+        repaired.concepts_covered = block.concepts_covered;
+      }
+      continue; // that entry was never a lesson block
+    }
+    const type = hasType ? (block.type as string).trim().toLowerCase() : '';
+    if (HEADING_TYPES.has(type)) {
+      blocks.push({ ...block, type: 'heading' });
+    } else if (PARAGRAPH_TYPES.has(type)) {
+      blocks.push({ ...block, type: 'paragraph' });
+    } else {
+      blocks.push(block);
+    }
+  }
+  repaired.blocks = blocks;
+  return repaired;
+}
+
 export type ValidationResult =
   | { ok: true; lesson: GeneratedLesson; stats: GeneratedLessonStats }
   | { ok: false; errors: string[] };
 
 export function validateGeneratedLesson(value: unknown, plan: LessonPlan): ValidationResult {
   const errors: string[] = [];
-  const root = asRow(value);
+  const root = asRow(repairLessonShape(value));
   if (!root) {
     return { ok: false, errors: ['output is not a JSON object'] };
   }

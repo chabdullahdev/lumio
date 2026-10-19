@@ -15,6 +15,7 @@
  * single pass), with backend/.env present.
  */
 import { hostname } from 'node:os';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { pathToFileURL } from 'node:url';
 import { loadBackendEnv, type BackendConfig } from '../env.ts';
 import { checkOllama } from '../ollama-health.ts';
@@ -22,6 +23,38 @@ import { getSupabaseAdmin } from '../supabase-admin.ts';
 import { InsufficientMaterialError, generateLessonForUser } from '../lessons/generate.ts';
 
 const CLAIM_BATCH = 2;
+
+/**
+ * A dead job holds its idempotency key, which stops replenishment for that
+ * reader for good. Dead usually means "the AI slipped" or "the library was
+ * too small that day", both of which pass, so dead generate_lesson jobs are
+ * put back in the queue once they have been dead this long.
+ */
+const DEAD_JOB_RETRY_MS = Number(process.env.DEAD_JOB_RETRY_MS ?? 60 * 60_000);
+
+/** Put long-dead lesson jobs back in the queue with a fresh set of attempts. */
+export async function reviveDeadJobs(admin: SupabaseClient, olderThanMs: number): Promise<number> {
+  const cutoff = new Date(Date.now() - olderThanMs).toISOString();
+  const revived = await admin
+    .from('jobs')
+    .update({
+      status: 'queued',
+      attempts: 0,
+      run_at: new Date().toISOString(),
+      locked_at: null,
+      locked_by: null,
+      finished_at: null,
+    })
+    .eq('status', 'dead')
+    .eq('job_type', 'generate_lesson')
+    .lt('finished_at', cutoff)
+    .select('id');
+  if (revived.error) {
+    log(`could not retry dead jobs: ${revived.error.message}`);
+    return 0;
+  }
+  return revived.data.length;
+}
 
 type JobRow = {
   id: string;
@@ -67,6 +100,11 @@ function errorMessage(error: unknown): string {
 /** Run one dispatch pass. Returns how many jobs were processed. */
 export async function runOnce(config: BackendConfig, workerId: string): Promise<number> {
   const admin = getSupabaseAdmin(config);
+
+  const retried = await reviveDeadJobs(admin, DEAD_JOB_RETRY_MS);
+  if (retried > 0) {
+    log(`retrying ${retried} job(s) that had been marked dead`);
+  }
 
   const enqueueResult = await admin.rpc('enqueue_replenish_jobs', { p_limit: 20 });
   if (enqueueResult.error) {

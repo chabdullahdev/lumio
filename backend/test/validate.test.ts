@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { extractJsonObject, validateGeneratedLesson } from '../src/lessons/validate.ts';
+import { extractJsonObject, repairLessonShape, validateGeneratedLesson } from '../src/lessons/validate.ts';
 import type { LessonPlan } from '../src/lessons/types.ts';
 
 const plan: LessonPlan = {
@@ -116,4 +116,46 @@ test('rejects non-object output', () => {
   if (!result.ok) {
     assert.ok(result.errors.some(error => error.includes('JSON object')));
   }
+});
+
+// --- shape repair (real failure: the model put takeaways inside blocks) -------
+
+test('repairLessonShape moves takeaways and concepts out of the blocks list', () => {
+  const repaired = repairLessonShape({
+    title: 'T',
+    blocks: [
+      { type: 'heading', text: 'H' },
+      { takeaways: ['a', 'b', 'c'] },
+      { concepts_covered: ['X'] },
+    ],
+  }) as { blocks: unknown[]; takeaways: string[]; concepts_covered: string[] };
+  assert.deepEqual(repaired.blocks, [{ type: 'heading', text: 'H' }]);
+  assert.deepEqual(repaired.takeaways, ['a', 'b', 'c']);
+  assert.deepEqual(repaired.concepts_covered, ['X']);
+});
+
+test('repairLessonShape renames common block-type synonyms and leaves real errors alone', () => {
+  const repaired = repairLessonShape({
+    blocks: [{ type: 'Subheading', text: 'a' }, { type: 'text', text: 'b' }, { type: 'list', text: 'c' }],
+  }) as { blocks: { type: string }[] };
+  assert.deepEqual(repaired.blocks.map(block => block.type), ['heading', 'paragraph', 'list']);
+});
+
+test('repairLessonShape never overwrites top-level takeaways that already exist', () => {
+  const repaired = repairLessonShape({
+    takeaways: ['real'],
+    blocks: [{ takeaways: ['stray'] }],
+  }) as { takeaways: string[] };
+  assert.deepEqual(repaired.takeaways, ['real']);
+});
+
+test('a lesson whose takeaways and concepts were nested in blocks now validates (the real failure)', () => {
+  const lesson = validLesson();
+  const broken = {
+    title: lesson.title,
+    summary: lesson.summary,
+    blocks: [...(lesson.blocks as unknown[]), { takeaways: lesson.takeaways }, { concepts_covered: lesson.concepts_covered }],
+  };
+  const result = validateGeneratedLesson(broken, plan);
+  assert.equal(result.ok, true);
 });

@@ -92,3 +92,26 @@ test('the planner prompt lists every option, the interests and recent lessons', 
   assert.ok(text.includes('1. [') && text.includes('Peloponnesian War'));
   assert.ok(text.includes('new to this reader'));
 });
+
+test('finishing a lesson in a subject brings the next lesson in that same subject', () => {
+  // The reader has three subjects and three slots. They just finished History, so
+  // Science and Politics are still queued and History is the only subject free.
+  const base = data({
+    interests: [
+      { categoryId: 'sci', categoryName: 'Science', weight: 5 },
+      { categoryId: 'his', categoryName: 'History', weight: 3 },
+      { categoryId: 'pol', categoryName: 'Politics', weight: 3 },
+    ],
+    concepts: [
+      concept('sci', 'c1', 'Photosynthesis'), concept('sci', 'c2', 'Evolution'),
+      concept('his', 'h1', 'Roman Republic'), concept('his', 'h2', 'Peloponnesian War'),
+      concept('pol', 'p1', 'Separation of Powers'), concept('pol', 'p2', 'Social Contract'),
+    ],
+    passages: ['c1', 'c2', 'h1', 'h2', 'p1', 'p2'].flatMap((id, i) => [passage(i * 10 + 1, id), passage(i * 10 + 2, id)]),
+    queuedCategoryIds: ['sci', 'pol'],
+  });
+  assert.deepEqual(listPlanOptions(base).map(option => option.categoryName), ['History', 'History']);
+  assert.equal(chooseLessonPlan(base)?.categoryName, 'History');
+  // Even if the AI asks for another subject, a subject already in the queue is refused.
+  assert.equal(chooseLessonPlan(base, 'p1')?.categoryName, 'History');
+});
