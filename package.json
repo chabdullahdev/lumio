@@ -7,6 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "postinstall": "node scripts/pod-install.js",
+    "doctor": "node scripts/machine-check.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "release:publish": "node --env-file-if-exists=backend/.env scripts/publish-android-release.mjs",
     "start": "react-native start",

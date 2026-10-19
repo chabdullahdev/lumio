@@ -133,13 +133,15 @@ backend/
 │   ├── worker/main.ts      Poll loop: enqueue → claim → generate → complete/fail
 │   ├── lessons/            candidates.ts (pick material), prompt.ts, generate.ts,
 │   │                       validate.ts, types.ts
-│   ├── library/            catalog.ts (reading list), epub.ts, passages.ts
+│   ├── library/            catalog.ts (reading list), epub.ts, passages.ts,
+│   │                       gutenberg-catalog.ts, curate.ts, book-files.ts
 │   ├── ollama.ts           Client for the local AI model
 │   ├── supabase-admin.ts   Service-role Supabase client
 │   ├── env.ts              Loads and validates backend/.env
 │   └── check-env.ts        `npm run check` — prints status, never secrets
 ├── scripts/
 │   ├── ingest-library.ts       Add public-domain books to the library
+│   ├── discover-books.ts       Find books in Gutenberg's catalogue, AI picks, convert to files
 │   ├── plan-lessons.ts         Preview what lessons would be planned
 │   ├── generate-preview.ts     Generate one lesson offline from a JSON file
 │   ├── store-authored-lessons.ts  Store hand-authored lessons

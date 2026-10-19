@@ -32,6 +32,29 @@ Without `.env` the app still runs in **sample mode** with placeholder lessons.
 
 ---
 
+## 1b. Working from a second computer
+
+Git carries all the code, docs and database files. It deliberately does **not**
+carry secrets or large generated files, so a second machine needs these once:
+
+| Not in git | What to do on the new machine |
+| --- | --- |
+| `.env` and `backend/.env` (keys) | Copy them from the first machine (AirDrop, USB, password manager). Never email or commit them. |
+| Android signing key (`android/app/lumio-release.keystore`, `android/keystore.properties`) | Copy both. Only needed to publish app updates. |
+| Installed packages | `npm install` and `cd backend && npm install` |
+| The AI model | `ollama pull qwen3.5:9b` |
+| Your git name and email | `git config user.name "chabdullahdev"` and `git config user.email "238083306+chabdullahdev@users.noreply.github.com"` (inside the project) |
+| GitHub login | `gh auth login` as `chabdullahdev` |
+| Downloaded book files (`backend/library-data/`) | Nothing: regenerate with the discovery script, or just use the books already saved in Supabase. |
+
+Then run `npm run doctor`. It lists exactly what is still missing.
+
+**Daily habit, so the two machines never clash:** before you start, `git pull`;
+when you stop, commit and `git push`. Only run the lesson worker on **one**
+machine at a time.
+
+---
+
 ## 2. Everyday development (the app)
 
 1. Edit files in `src/`. The preview refreshes on its own.
@@ -132,6 +155,27 @@ node scripts/generate-preview.ts path/to/candidate-data.json --out lesson.json
 7. Public-domain only. Every source needs an approved licensing record.
 
 ---
+
+### 5b. Finding new books automatically (script + local AI)
+
+A script reads Project Gutenberg's official catalogue (all public domain), sorts
+books into the six LUMIO categories with plain rules, and your local AI chooses
+the best ones and the concepts each can teach. The AI can only pick real books
+from the list it is given; anything else it returns is discarded.
+
+```bash
+cd backend
+node scripts/discover-books.ts                              # dry run: counts + shortlist per category
+node scripts/discover-books.ts --curate --model <installed> # AI chooses (Ollama must be running)
+node scripts/discover-books.ts --fetch                      # convert the AI's picks to files
+```
+
+Options: `--category History`, `--shortlist 40` (books the AI sees), `--pick 8`
+(books it may choose), `--refresh` (re-download the catalogue). Output goes to
+`backend/library-data/` (not committed): `curated.json`, and per book a
+`book.md`, `book.json` (chapters + ~250-word passages) and `concepts.json`.
+Nothing is written to Supabase yet; saving converted books to the database is
+the next step.
 
 ## 6. Releasing an Android update
 
