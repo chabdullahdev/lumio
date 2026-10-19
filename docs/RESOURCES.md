@@ -10,7 +10,7 @@ sources, and reference documents. For where code lives see
 | Service | Used for | Notes |
 | --- | --- | --- |
 | **Supabase** | Postgres database, Auth (email + Google), Storage | One project holds everything. Row Level Security on every table. |
-| **Vercel** | Hosts the landing page (`web/`) and the web app (`/app/`, built from `webapp/`) | Root Directory = repository root; the root `vercel.json` does the build. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Live at https://lumio.mabdullahshahzad.com |
+| **Vercel** | Hosts the landing page (`web/`) and the web app (`/app/`, the committed build in `web/app/`) | Live project `lumio-web` (Root Directory `web`) serves https://lumio.mabdullahshahzad.com. A second project `lumio` (root `vercel.json`, builds `webapp/` itself; needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`) serves lumio-nine-henna.vercel.app. |
 | **GitHub** | Source code | `https://github.com/chabdullahdev/lumio` (branch `master`). The website redeploys from here. |
 | **Google (OAuth)** | "Continue with Google" | Configured in the Supabase Auth dashboard. |
 | **Project Gutenberg** | Public-domain books for the library | Catalogue read and books fetched by the librarian (`discover-books.ts`) and `ingest-library.ts`. |

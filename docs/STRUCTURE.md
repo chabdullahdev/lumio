@@ -222,9 +222,10 @@ Two phone-only imports are swapped for browser versions by a small Vite plugin
 (`../lib/supabase` → `webapp/src/shims/supabase.ts`, and AsyncStorage →
 `localStorage`). Fix a query once and both apps get the fix.
 
-`npm run build` in `webapp/` writes the site into `web/app/` (gitignored;
-Vercel builds it). The root `vercel.json` ties the landing page and the web app
-together.
+`npm run build` in `webapp/` (or `npm run web:build` from the root) writes the site
+into `web/app/`, which **is committed** so the landing-page project can serve it
+without a build step. Rebuild and commit it after changing the web app. The root
+`vercel.json` lets a second Vercel project build it from source instead.
 
 ## `scripts/` — project tooling
 

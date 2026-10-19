@@ -293,19 +293,32 @@ must be updated by hand when a phone screen changes its behaviour or wording.
 and a case in `src/App.tsx`. Keep it working on phones (the nav becomes a bottom bar
 under 640 px) and in light and dark mode.
 
-**Deploying (Vercel, your account)**
+**Publishing the web app**
 
-1. In Vercel, import the GitHub repo `chabdullahdev/lumio` with **Root Directory = the
-   repository root** (not `web`). The root `vercel.json` already sets the build
-   (`webapp` → `web/app/`) and serves `web/`.
-2. Add two environment variables to the project (both public values):
-   `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Without them the
-   deployed web app runs in sample mode only.
-3. Deploy. The landing page is at `/` and the web app at `/app/`.
-4. In **Supabase → Authentication → URL Configuration → Redirect URLs**, add
-   `https://lumio.mabdullahshahzad.com/app/` (and `http://localhost:5173/app/` for local
-   testing). Without this, "Continue with Google" cannot return to the web app.
-5. Email sign-up links also return to `/app/`, so keep that URL on the same list.
+The web app is published two ways from the same GitHub push, and both work:
+
+- **The live site, `lumio.mabdullahshahzad.com`** (Vercel project `lumio-web`, root
+  directory `web`, no build step). It serves the **built web app that is committed in
+  `web/app/`**. So after you change anything in `webapp/` (or in the shared
+  `src/data`), rebuild and commit the result:
+
+  ```bash
+  npm run web:build        # writes web/app/ (uses webapp/.env.local for the public Supabase values)
+  git add web/app && git commit -m "Rebuild the web app" && git push
+  ```
+
+  Forgetting this means the live site keeps showing the old web app.
+- **A second copy, `lumio-nine-henna.vercel.app`** (Vercel project `lumio`, root directory =
+  the repository root). The root `vercel.json` builds `webapp/` itself on every push
+  (`VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set in that project).
+  Handy for checking a build; you can delete that project in Vercel if you only
+  want one site.
+
+**One-time Supabase setting (needed for Google sign-in on the web).** In
+**Supabase → Authentication → URL Configuration → Redirect URLs**, add
+`https://lumio.mabdullahshahzad.com/app/` (and `https://lumio-nine-henna.vercel.app/app/`
+if you use the second copy, and `http://localhost:5173/app/` for local testing). Email
+sign-up links also return to `/app/`.
 
 ---
 

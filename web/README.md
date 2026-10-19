@@ -1,10 +1,10 @@
 # LUMIO landing page
 
 One static page (`index.html`), no build step, no scripts from other sites. Deployed to
-**https://lumio.mabdullahshahzad.com** with Vercel. The Vercel project's Root Directory is the
-**repository root**: the root `vercel.json` builds the web app (`webapp/` → `web/app/`) and
-serves this `web/` folder, so the landing page lives at `/` and the full web app at `/app/`
-(see `docs/WORKFLOWS.md`, "The web app"). `web/app/` is generated and gitignored.
+**https://lumio.mabdullahshahzad.com** with Vercel (project `lumio-web`, Root Directory `web`,
+framework preset **Other**, no build step). The full web app lives at `/app/`: `web/app/` is the
+**committed build** of `webapp/` (run `npm run web:build` from the repository root after changing
+it, then commit). See `docs/WORKFLOWS.md`, "The web app".
 
 ## What the page does
 
