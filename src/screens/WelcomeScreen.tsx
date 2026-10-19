@@ -5,6 +5,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton, Screen } from '../components/ui';
+import { LogoMark } from '../components/logo';
 import { useNavigation } from '../navigation/NavigationContext';
 import { useSession } from '../state/session';
 import { useTheme } from '../lib/use-theme';
@@ -44,9 +45,7 @@ export function WelcomeScreen() {
       }
     >
       <View style={styles.hero}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeEmoji}>{'\u{1F4D6}'}</Text>
-        </View>
+        <LogoMark size={68} style={styles.heroMark} />
         <Text style={styles.name}>{brand.name}</Text>
         <Text style={styles.tagline}>{brand.tagline}</Text>
 
@@ -97,17 +96,8 @@ function createStyles(theme: Theme) {
       alignItems: 'center',
       paddingTop: theme.spacing(14),
     },
-    badge: {
-      width: 76,
-      height: 76,
-      borderRadius: 22,
-      backgroundColor: theme.colors.accentSoft,
-      alignItems: 'center',
-      justifyContent: 'center',
+    heroMark: {
       marginBottom: theme.spacing(5),
-    },
-    badgeEmoji: {
-      fontSize: 36,
     },
     name: {
       fontSize: 36,

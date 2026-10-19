@@ -10,8 +10,14 @@
 import type { LessonPlan } from './types.ts';
 import type { OllamaMessage } from '../ollama.ts';
 
-/** Stored on every lesson row so prompt changes are traceable. */
-export const PROMPT_VERSION = 'lesson-writer-v1';
+/**
+ * Stored on every lesson row so prompt changes are traceable.
+ *
+ * v2: the structure line now states an explicit paragraph count. Under v1 the
+ * model read "one or more paragraphs" per section literally and returned three
+ * or four paragraphs, which the validator (6-30 paragraphs) always rejected.
+ */
+export const PROMPT_VERSION = 'lesson-writer-v2';
 
 export const TARGET_WORDS_MIN = 800;
 export const TARGET_WORDS_MAX = 1050;
@@ -58,7 +64,8 @@ export function buildLessonPrompt(plan: LessonPlan): OllamaMessage[] {
     '',
     `Subject area: ${plan.categoryName}.`,
     `Length: between ${TARGET_WORDS_MIN} and ${TARGET_WORDS_MAX} words across the paragraphs (not counting takeaways).`,
-    `Structure: 3 to 4 sections; each section starts with one heading and continues with one or more paragraphs.`,
+    `Structure: 3 to 4 sections; each section starts with one heading and continues with two to four paragraphs, 8 to 14 paragraphs in total.`,
+    `Paragraphs: each paragraph is 40 to 160 words and covers one connected idea; never merge the whole lesson into a few long paragraphs on a single topic, and never return fewer than 8 paragraphs.`,
     `Takeaways: ${TARGET_TAKEAWAYS_MIN} to ${TARGET_TAKEAWAYS_MAX}, each a single clear sentence.`,
     `concepts_covered: must include the central concept, using the exact names listed above.`,
     '',

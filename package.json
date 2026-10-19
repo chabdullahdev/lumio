@@ -1,5 +1,5 @@
 {
-  "name": "ReactNativeStarter",
+  "name": "lumio",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -7,6 +7,8 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "postinstall": "node scripts/pod-install.js",
+    "icons": "node scripts/generate-icons.mjs",
+    "release:publish": "node --env-file-if-exists=backend/.env scripts/publish-android-release.mjs",
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit"
@@ -39,6 +41,7 @@
     "prettier": "2.8.8",
     "react-native-dotenv": "5.0.0",
     "react-test-renderer": "19.2.3",
+    "sharp": "^0.35.5",
     "typescript": "^5.8.3"
   },
   "engines": {

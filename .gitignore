@@ -35,6 +35,10 @@ local.properties
 !debug.keystore
 .kotlin/
 
+# Android release signing (never commit; back these up)
+android/keystore.properties
+android/app/lumio-release.keystore
+
 # node.js
 #
 node_modules/

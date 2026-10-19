@@ -64,6 +64,10 @@ npm run lint
 npm test
 ```
 
+Launcher icons and the in-app logo marks are generated from the artwork in
+`public/` (`LUMIO app icon.svg`, `LUMIO header logo.svg`) — run `npm run icons`
+after changing them.
+
 ## 2. Backend workers
 
 ```bash
@@ -125,6 +129,28 @@ It runs the real pipeline (selection → prompt → Ollama → validation) and
 writes the validated lesson plus its plan (passage/concept ids) to
 `lesson.json`. Exit code 2 = insufficient material, 3 = generation/validation
 failure (the raw output is printed for inspection).
+
+### Authoring lessons offline and storing them
+
+When generation is too slow or too unreliable (for example CPU-only Ollama),
+lessons can be authored offline against the same candidate data and stored
+through the production write path. Two scripts cover this:
+
+```bash
+# 1. Build up to three distinct plans (real candidate selection, full passage text)
+node --env-file-if-exists=.env scripts/plan-lessons.ts <user-id> --count 3 --out plans.json
+
+# 2. After filling in a `lesson` object per plan (same JSON shape the model
+#    returns), validate and store them exactly as generate.ts does:
+#    lesson row -> takeaways -> sources -> concepts -> queue -> ready
+node --env-file-if-exists=.env scripts/store-authored-lessons.ts authored.json
+```
+
+`store-authored-lessons.ts` re-validates every lesson with `validate.ts`, skips
+titles already stored for the user, and refuses to write anything that would not
+have passed the model path. Authored lessons are marked with
+`generation_model = 'assistant-authored'` and a dated `prompt_version` in the
+quality report, so provenance stays visible.
 
 Checks:
 
@@ -195,6 +221,7 @@ development project — see the two apply records after the table.
 | 12 | `..._12_dead_letter_jobs.sql` | `dead_letter_job`: terminal failure on first attempt, keeps the idempotency key to stop reconciliation churn |
 | 13 | `..._13_lesson_source_reads.sql` | owner-scoped read policies on `sources`/`licensing_records`/`passages` so the reader can show a lesson's source attribution (found by end-to-end testing under RLS) |
 | 14 | `..._14_job_search_path.sql` | explicit `set search_path = ''` on the job-protocol functions (advisor hygiene; behaviour unchanged) |
+| 15 | `..._15_app_releases_bucket.sql` | public `app-releases` Storage bucket (APK + `latest.json` for Android auto-update) |
 
 **Apply record (16 October 2026)** — applied via the Supabase MCP
 `apply_migration` tool: one call per file, in filename order, each preceded by
@@ -287,6 +314,13 @@ verification after applying:
   *twice covered*, closed the queue row, and enqueued the next replenishment
   job (the previous key had been freed by `complete_job`).
 
+**Apply record #3 (19 October 2026) — migration 15.** Applied via the Supabase
+MCP `apply_migration` tool. Verified afterwards: `storage.buckets` holds
+`app-releases` with `public = true`, a 250 MB size cap, and only the APK and
+JSON MIME types allowed. No storage policies were added — reads happen through
+the public object URL, uploads through the service-role key, which bypasses
+RLS.
+
 **Seeded library provenance (migration 11).** The starter library is seven
 Wikipedia articles frozen as a committed snapshot
 (`supabase/seed/wikipedia-extracts.json`) and generated into SQL by
@@ -300,7 +334,37 @@ licensing record be used for a lesson.
 Rules: never edit a migration that has been applied — add a new one. No
 destructive operations without explicit approval.
 
-## 5. Security rules (non-negotiable)
+## 5. Releasing the Android app (auto-update)
+
+Installed apps update themselves from the public **`app-releases`** storage
+bucket (migration 15). Release flow:
+
+1. Bump `versionCode` (and usually `versionName`) in `android/app/build.gradle`.
+2. Rebuild the release APK (Ship Studio: reopen the project).
+3. Publish it:
+
+   ```bash
+   npm run release:publish
+   ```
+
+   The script reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from
+   `backend/.env`, uploads `lumio-<versionCode>.apk` plus `latest.json`, and
+   refuses to replace a newer published build unless `--force` is passed.
+
+4. On next launch the app compares the published `versionCode` with the
+   installed one, shows an update card, downloads with progress, verifies the
+   APK's SHA-256, and hands it to the Android installer (the user confirms the
+   install; Android does not allow fully silent installs for normal apps).
+
+**Release signing.** The build reads `android/keystore.properties` and
+`android/app/lumio-release.keystore` (both gitignored). **Back both files up
+somewhere safe** — Android only accepts an update signed with the same key, so
+losing them means every installed app must be uninstalled before the next
+build can be installed. Without the properties file the release build falls
+back to the debug key (with a Gradle warning), which can still be installed
+fresh but can never update an existing release-signed install.
+
+## 6. Security rules (non-negotiable)
 
 - Publishable key in the app; service-role key only in `backend/.env`.
 - RLS enabled on every table. Knowledge/library tables are deny-by-default for
@@ -312,7 +376,7 @@ destructive operations without explicit approval.
   are read-only to users and written by the backend, so client apps cannot
   forge streaks.
 
-## 6. Known limitations / current state
+## 7. Known limitations / current state
 
 - **The whole core journey is built** (app): welcome/sign-in, interest
   onboarding, home with three prepared lessons, reader with progress saving,
@@ -339,8 +403,16 @@ destructive operations without explicit approval.
 - `npm run validate:migrations` checks **syntax only** (real PostgreSQL
   grammar via libpg_query). Semantic checks happen against the server after
   applying.
-- The app is still named `ReactNativeStarter` in `app.json` and the native
-  projects; renaming is a small native change.
+- **App identity**: Android application id `com.lumio.app`, label **Lumio**
+  (renamed from the starter template). The iOS project folder is still
+  `ios/ReactNativeStarter` and its bundle id has not been changed — harmless
+  until an iOS build is set up, and changing it then does not affect Android.
+- **Auto-update is Android-only**: it installs signed APKs, so iOS would need
+  the App Store (or TestFlight) instead. Update UI hides itself when the
+  native module or backend config is missing.
+- **First install after the rename must be manual** (uninstall the old
+  `com.reactnativestarter` build, then install the new APK); automatic updates
+  apply from `com.lumio.app` build 1 onwards.
 - Embedding model for Ollama is not pulled yet (needed for the retrieval
   phase). Passage embeddings are not generated yet; lesson selection uses
   concept links instead.

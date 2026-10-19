@@ -1,0 +1,4 @@
+<resources>
+    <!-- Launcher icon background (adaptive icon, Android 8+). -->
+    <color name="ic_launcher_background">#54E36E</color>
+</resources>

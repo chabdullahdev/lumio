@@ -60,6 +60,22 @@ react {
 def enableProguardInReleaseBuilds = false
 
 /**
+ * Release signing.
+ *
+ * The release keystore and its credentials live in android/keystore.properties
+ * (never committed — back the file and the keystore up). Losing them means
+ * already-installed apps can never be updated again, because Android only
+ * accepts an update signed with the same key.
+ */
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    logger.warn("LUMIO: android/keystore.properties not found - the release build will be signed with the DEBUG key.")
+}
+
+/**
  * The preferred build flavor of JavaScriptCore (JSC)
  *
  * For example, to use the international variant, you can use:
@@ -77,9 +93,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.reactnativestarter"
+    namespace "com.lumio.app"
     defaultConfig {
-        applicationId "com.reactnativestarter"
+        applicationId "com.lumio.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -92,15 +108,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Real release signing when android/keystore.properties exists;
+            // falls back to the debug key so local builds never break, but a
+            // debug-signed APK can never update a release-signed install.
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

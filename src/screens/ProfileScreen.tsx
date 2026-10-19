@@ -17,6 +17,7 @@ import {
 import { topicEmoji } from '../components/topic-grid';
 import { useNavigation } from '../navigation/NavigationContext';
 import { useSession } from '../state/session';
+import { UpdateCard } from '../components/update-card';
 import { useTheme } from '../lib/use-theme';
 import type { Theme } from '../theme';
 import type { ProfileSnapshot } from '../data/types';
@@ -189,6 +190,9 @@ export function ProfileScreen() {
         </View>
         {settingsMessage ? <Text style={styles.settingsMessage}>{settingsMessage}</Text> : null}
       </Card>
+
+      <SectionTitle>App updates</SectionTitle>
+      <UpdateCard mode="settings" />
 
       <SectionTitle>Account</SectionTitle>
       <Card>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paths the in-app updater may share through its FileProvider: the
+     downloaded APK lives in cache/updates/. -->
+<paths>
+    <cache-path name="updates" path="updates/" />
+</paths>

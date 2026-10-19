@@ -15,6 +15,8 @@ import {
   SectionTitle,
 } from '../components/ui';
 import { useNavigation } from '../navigation/NavigationContext';
+import { LogoMark } from '../components/logo';
+import { UpdateCard } from '../components/update-card';
 import { useSession } from '../state/session';
 import { useTheme } from '../lib/use-theme';
 import type { Theme } from '../theme';
@@ -94,15 +96,20 @@ export function HomeScreen() {
   return (
     <Screen scroll refreshing={refreshing} onRefresh={() => refresh()}>
       <View style={styles.header}>
-        <View style={styles.headerText}>
-          <MutedText>{greeting()}</MutedText>
-          <Text style={styles.headerName}>{firstName ?? 'Welcome back'}</Text>
+        <View style={styles.headerBrand}>
+          <LogoMark size={30} style={styles.headerLogo} />
+          <View style={styles.headerText}>
+            <MutedText>{greeting()}</MutedText>
+            <Text style={styles.headerName}>{firstName ?? 'Welcome back'}</Text>
+          </View>
         </View>
         <Pill
           label={streakLabel(home.streak)}
           tone={home.streak.current > 0 ? 'accent' : 'neutral'}
         />
       </View>
+
+      <UpdateCard />
 
       {home.next ? (
         <NextLessonCard
@@ -247,6 +254,14 @@ function createStyles(theme: Theme) {
     },
     headerText: {
       flexShrink: 1,
+    },
+    headerBrand: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexShrink: 1,
+    },
+    headerLogo: {
+      marginRight: theme.spacing(3),
     },
     headerName: {
       fontSize: theme.type.title,
