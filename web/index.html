@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LUMIO — Learn something real, every day</title>
+  <meta name="description" content="LUMIO is a daily lesson app. One focused, 15-minute reading lesson a day, chosen for you from great books, instead of another hour of scrolling.">
+  <meta name="theme-color" content="#0e1116">
+  <meta property="og:title" content="LUMIO — Less scrolling. More understanding.">
+  <meta property="og:description" content="A daily lesson app that teaches you something real every day.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #0e1116;
+      --surface: #161b22;
+      --border: #232a33;
+      --text: #f2f4f7;
+      --text-2: #9aa4b2;
+      --accent: #54e36e;
+      --accent-ink: #0b2912;
+      --danger: #f87171;
+      --radius: 14px;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    a { color: inherit; }
+    .wrap { width: 100%; max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    header { padding: 20px 0; }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { height: 28px; width: auto; display: block; }
+    .account { font-size: 14px; color: var(--text-2); display: flex; align-items: center; gap: 10px; min-height: 44px; }
+    .account button { all: unset; cursor: pointer; color: var(--accent); font-weight: 600; padding: 10px 4px; }
+    .account button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .hero { padding-block: 56px 40px; }
+    h1 { font-size: clamp(34px, 7vw, 56px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 20px; max-width: 14em; }
+    h1 em { font-style: normal; color: var(--accent); }
+    .lede { font-size: clamp(17px, 2.4vw, 20px); color: var(--text-2); max-width: 36em; margin: 0 0 32px; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 52px; padding: 0 24px; border-radius: var(--radius);
+      font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+      border: 1px solid transparent; transition: transform .08s ease, background .15s ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+    .btn-primary { background: var(--accent); color: var(--accent-ink); }
+    .btn-primary:hover { background: #6bec83; }
+    .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface); }
+    .btn[disabled] { opacity: .6; cursor: progress; }
+    .btn svg { width: 20px; height: 20px; flex: none; }
+    .meta { margin: 14px 0 0; font-size: 14px; color: var(--text-2); }
+    .notice { margin: 14px 0 0; font-size: 14px; min-height: 1.4em; }
+    .notice.error { color: var(--danger); }
+    .notice.ok { color: var(--accent); }
+
+    section { padding: 40px 0; border-top: 1px solid var(--border); }
+    h2 { font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 0 0 24px; letter-spacing: -0.01em; }
+    .steps { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); padding: 0; margin: 0; list-style: none; counter-reset: step; }
+    .steps li {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 22px; counter-increment: step;
+    }
+    .steps li::before {
+      content: counter(step); display: inline-grid; place-items: center;
+      width: 32px; height: 32px; border-radius: 50%; margin-bottom: 14px;
+      background: rgba(84, 227, 110, .15); color: var(--accent); font-weight: 700;
+    }
+    .steps h3 { margin: 0 0 6px; font-size: 18px; }
+    .steps p { margin: 0; color: var(--text-2); font-size: 16px; }
+
+    .topics { display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 0 0 20px; list-style: none; }
+    .topics li { padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-weight: 600; font-size: 15px; }
+    .note { color: var(--text-2); max-width: 40em; margin: 0; }
+
+    .install { color: var(--text-2); padding-left: 1.2em; margin: 0; max-width: 40em; }
+    .install li { margin-bottom: 8px; }
+    .install strong { color: var(--text); }
+
+    footer { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--text-2); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+    @media (max-width: 720px) {
+      body { font-size: 16px; }
+      .hero { padding-block: 32px 28px; }
+      .steps { grid-template-columns: 1fr; }
+      .actions .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <img class="logo" src="logo.svg" alt="LUMIO" width="109" height="28">
+      <div class="account" id="account" hidden>
+        <span id="account-email"></span>
+        <button type="button" id="sign-out">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap hero">
+      <h1>Learn something <em>real</em>, every day.</h1>
+      <p class="lede">
+        LUMIO is a daily lesson app. Each day you get one focused, fifteen-minute reading lesson,
+        chosen for you from great books, instead of another hour of scrolling.
+      </p>
+
+      <div class="actions">
+        <a class="btn btn-primary" id="download" href="https://kufcrqeobbjyblfcozvg.supabase.co/storage/v1/object/public/app-releases/lumio-1.apk" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 21h16"/></svg>
+          Download APK
+        </a>
+        <button class="btn btn-secondary" id="google" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.8-5.5 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.4 14.6 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.5 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"/></svg>
+          <span id="google-label">Continue with Google</span>
+        </button>
+      </div>
+      <p class="meta" id="download-meta">Android app · free · about 29 MB</p>
+      <p class="notice" id="notice" role="status" aria-live="polite"></p>
+    </div>
+
+    <section>
+      <div class="wrap">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <h3>Pick what you care about</h3>
+            <p>Choose a few subjects. You never have to pick a book, a chapter or a course.</p>
+          </li>
+          <li>
+            <h3>Read one lesson a day</h3>
+            <p>About fifteen minutes, built from real sources, ending with three to five takeaways.</p>
+          </li>
+          <li>
+            <h3>Build a gentle streak</h3>
+            <p>Your progress is saved as you read. Miss a day and nothing bad happens, no guilt, no nagging.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>What you can learn</h2>
+        <ul class="topics" aria-label="Subjects">
+          <li>Geopolitics</li>
+          <li>History</li>
+          <li>Islam</li>
+          <li>Politics</li>
+          <li>Psychology</li>
+          <li>Science</li>
+        </ul>
+        <p class="note">
+          Lessons draw on classic books in the public domain, such as Darwin, Einstein, Thucydides,
+          William James and Mill, and always show where an idea came from. No quizzes, no tests,
+          just understanding.
+        </p>
+      </div>
+    </section>
+
+    <section id="install">
+      <div class="wrap">
+        <h2>Install on Android</h2>
+        <ol class="install">
+          <li>Tap <strong>Download APK</strong> on your phone.</li>
+          <li>Open the file. If Android asks, allow installs from your browser, because LUMIO is not on the Play Store yet.</li>
+          <li>Open LUMIO and tap <strong>Continue with Google</strong>, or use your email.</li>
+        </ol>
+        <p class="note" style="margin-top:16px">
+          Once installed, LUMIO tells you inside the app when a new version is ready.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>LUMIO · Less scrolling. More understanding.</span>
+      <span>Android first. iOS later.</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
+  <script>
+    (function () {
+      // Public values: the project URL and the publishable key are meant to ship to browsers.
+      // Row Level Security protects the data, not the key.
+      var SUPABASE_URL = 'https://kufcrqeobbjyblfcozvg.supabase.co';
+      var SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xksc2f8DSHw0HmBIkI4iWw_9zgmVAAZ';
+      var MANIFEST_URL = SUPABASE_URL + '/storage/v1/object/public/app-releases/latest.json';
+
+      var $ = function (id) { return document.getElementById(id); };
+      var notice = $('notice');
+      var googleButton = $('google');
+      var googleLabel = $('google-label');
+
+      function say(message, kind) {
+        notice.textContent = message || '';
+        notice.className = 'notice' + (kind ? ' ' + kind : '');
+      }
+
+      // 1) Keep the download button pointed at the newest published APK.
+      fetch(MANIFEST_URL, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('manifest ' + r.status)); })
+        .then(function (m) {
+          if (typeof m.url === 'string' && /^https:\/\//.test(m.url)) {
+            $('download').href = m.url;
+          }
+          var mb = m.size > 0 ? Math.round(m.size / 1048576) + ' MB' : '';
+          $('download-meta').textContent =
+            'Android app · free · version ' + (m.versionName || '') + (mb ? ' · ' + mb : '');
+        })
+        .catch(function () { /* keep the built-in link and text */ });
+
+      // 2) Google sign-in.
+      var client = null;
+      if (window.supabase && SUPABASE_PUBLISHABLE_KEY.indexOf('__') !== 0) {
+        client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+        });
+      }
+
+      function showSession(session) {
+        var signedIn = !!(session && session.user);
+        $('account').hidden = !signedIn;
+        if (signedIn) {
+          $('account-email').textContent = session.user.email || 'Signed in';
+          googleButton.hidden = true;
+          say('You are signed in. Open the LUMIO app and tap Continue with Google to pick up where you left off.', 'ok');
+        } else {
+          googleButton.hidden = false;
+        }
+      }
+
+      if (!client) {
+        googleButton.addEventListener('click', function () {
+          say('Google sign-in is not available right now. Please try again later.', 'error');
+        });
+      } else {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('error_description')) {
+          say(params.get('error_description'), 'error');
+        }
+        client.auth.getSession().then(function (r) { showSession(r.data && r.data.session); });
+        client.auth.onAuthStateChange(function (_event, session) { showSession(session); });
+
+        googleButton.addEventListener('click', function () {
+          googleButton.disabled = true;
+          googleLabel.textContent = 'Opening Google…';
+          say('');
+          client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname,
+              queryParams: { prompt: 'select_account' }
+            }
+          }).then(function (r) {
+            if (r.error) { throw r.error; }
+          }).catch(function (e) {
+            googleButton.disabled = false;
+            googleLabel.textContent = 'Continue with Google';
+            say('Could not start Google sign-in: ' + (e && e.message ? e.message : 'unknown error'), 'error');
+          });
+        });
+
+        $('sign-out').addEventListener('click', function () {
+          client.auth.signOut().then(function () { say(''); showSession(null); });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
