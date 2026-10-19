@@ -58,11 +58,15 @@ name && email
 console.log('Installed packages');
 existsSync(join(root, 'node_modules')) ? ok('app packages') : bad('app packages missing', 'npm install');
 existsSync(join(root, 'backend', 'node_modules')) ? ok('backend packages') : bad('backend packages missing', 'cd backend && npm install');
+existsSync(join(root, 'webapp', 'node_modules')) ? ok('web app packages') : bad('web app packages missing', 'cd webapp && npm install');
 
 console.log('Secret files (never in git, copy them from your other machine)');
 hasValue(join(root, '.env'), 'SUPABASE_URL') && hasValue(join(root, '.env'), 'SUPABASE_PUBLISHABLE_KEY')
   ? ok('.env (app)')
   : bad('.env missing or empty', 'copy .env from the other machine, or cp .env.example .env and fill it in');
+hasValue(join(root, 'webapp', '.env.local'), 'VITE_SUPABASE_URL') && hasValue(join(root, 'webapp', '.env.local'), 'VITE_SUPABASE_PUBLISHABLE_KEY')
+  ? ok('webapp/.env.local (web app)')
+  : bad('webapp/.env.local missing or empty', 'cp webapp/.env.example webapp/.env.local and fill in the same URL and publishable key as .env');
 hasValue(join(root, 'backend', '.env'), 'SUPABASE_SERVICE_ROLE_KEY')
   ? ok('backend/.env (worker)')
   : bad('backend/.env missing or empty', 'copy backend/.env from the other machine (it holds the secret key)');

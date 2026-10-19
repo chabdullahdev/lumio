@@ -27,6 +27,10 @@ LUMIO is made of four parts that share one database:
 ┌─────────────────────┐
 │ Landing page (web/) │  static HTML on Vercel; reads latest.json for the
 └─────────────────────┘  Android download link
+
+┌─────────────────────┐  same Supabase, same accounts and lessons as the
+│ Web app (webapp/)   │  phone app; built into web/app/ and served at
+└─────────────────────┘  /app/ on the landing site
 ```
 
 - The **app** only reads and writes the signed-in user's own data.
@@ -35,6 +39,8 @@ LUMIO is made of four parts that share one database:
 - **Supabase** holds the data, enforces who can see what (Row Level Security),
   and hosts the Android update files.
 - The **website** is a separate static page; it contains no secrets.
+- The **web app** is the whole LUMIO experience in a browser. It talks to Supabase
+  with the same publishable key and reuses the phone app's data code.
 
 ## Top level
 
@@ -52,6 +58,7 @@ LUMIO is made of four parts that share one database:
 | `babel.config.js`, `metro.config.js`, `tsconfig.json`, `jest.config.js`, `jest.setup.js`, `.eslintrc.js`, `.prettierrc.js` | Build, type-check, test and style configuration. |
 | `Gemfile`, `.bundle/` | Ruby setup used by CocoaPods for iOS. |
 | `.shipstudio/` | Ship Studio project metadata. |
+| `vercel.json` | Deployment: builds `webapp/` and serves `web/` (landing page + `/app/`). |
 
 ## `src/` — the mobile app
 
@@ -185,6 +192,39 @@ A single static page with no build step, deployed to Vercel (Root Directory:
 `legal.css`), SEO and sharing files (`robots.txt`, `sitemap.xml`,
 `site.webmanifest`, `llms.txt`, `og-image.png`), icons, and `vercel.json`
 (security headers, clean URLs). See `web/README.md`.
+
+## `webapp/` — the web app
+
+The full app in the browser (sign in with email or Google, choose topics, Home,
+reader, takeaways, Explore, Profile, sample mode). A separate Vite + React +
+TypeScript project with its own `package.json`. **The phone app is not changed
+by it and keeps working on its own.**
+
+```
+webapp/
+├── src/
+│   ├── App.tsx           Page shell, nav, who-may-see-what rules
+│   ├── router.ts         Hash router (addresses look like /app/#/lesson/123)
+│   ├── session.tsx       Sign-in state and data source (live or sample)
+│   ├── ui.tsx            Buttons, cards, topic grid, loading/error states
+│   ├── screens/          Welcome, Auth, Onboarding, Home, Lesson, Takeaways,
+│   │                     Complete, Explore, Topics, Profile
+│   ├── shims/            Browser versions of the two phone-only imports
+│   └── styles.css        Light and dark mode, desktop and phone layouts
+├── vite.config.ts        Shares the phone app's data code (see below)
+└── .env.example          VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
+```
+
+**Shared with the phone app (read-only).** `src/data/*` (types, the Supabase
+queries, sample lessons) and `src/lib/dates.ts` are imported straight from the
+phone app, so both apps read and write the database through the *same* code.
+Two phone-only imports are swapped for browser versions by a small Vite plugin
+(`../lib/supabase` → `webapp/src/shims/supabase.ts`, and AsyncStorage →
+`localStorage`). Fix a query once and both apps get the fix.
+
+`npm run build` in `webapp/` writes the site into `web/app/` (gitignored;
+Vercel builds it). The root `vercel.json` ties the landing page and the web app
+together.
 
 ## `scripts/` — project tooling
 

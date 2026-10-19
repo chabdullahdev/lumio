@@ -10,7 +10,7 @@ sources, and reference documents. For where code lives see
 | Service | Used for | Notes |
 | --- | --- | --- |
 | **Supabase** | Postgres database, Auth (email + Google), Storage | One project holds everything. Row Level Security on every table. |
-| **Vercel** | Hosts the landing page in `web/` | Root Directory `web`, framework preset **Other**. Live at https://lumio.mabdullahshahzad.com |
+| **Vercel** | Hosts the landing page (`web/`) and the web app (`/app/`, built from `webapp/`) | Root Directory = repository root; the root `vercel.json` does the build. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Live at https://lumio.mabdullahshahzad.com |
 | **GitHub** | Source code | `https://github.com/chabdullahdev/lumio` (branch `master`). The website redeploys from here. |
 | **Google (OAuth)** | "Continue with Google" | Configured in the Supabase Auth dashboard. |
 | **Project Gutenberg** | Public-domain books for the library | Catalogue read and books fetched by the librarian (`discover-books.ts`) and `ingest-library.ts`. |
@@ -21,9 +21,10 @@ sources, and reference documents. For where code lives see
 - **Tables** — see the migration list in [STRUCTURE.md](STRUCTURE.md). Library
   and job tables are service-only; users can only read approved top-level
   categories and their own lessons, progress and sources.
-- **Auth redirect** — `lumio://auth/callback` must be listed under
-  Authentication → URL Configuration → Redirect URLs, or Google sign-in
-  never returns to the app.
+- **Auth redirects** — `lumio://auth/callback` (phone) and
+  `https://lumio.mabdullahshahzad.com/app/` (web; plus `http://localhost:5173/app/`
+  for local testing) must be listed under Authentication → URL Configuration →
+  Redirect URLs, or Google sign-in never returns to the app.
 - **Storage bucket `app-releases`** — public, 250 MB cap, APK and JSON only.
   Holds `lumio-<versionCode>.apk` and `latest.json`. Created by migration 15.
 - **Auth setting to turn on before real users:** Leaked Password Protection
@@ -48,6 +49,13 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | --- | --- |
 | `SUPABASE_URL` | Project URL, `https://<ref>.supabase.co`. |
 | `SUPABASE_PUBLISHABLE_KEY` | Publishable key. The app refuses a secret key. |
+
+**Web app (`webapp/.env.local`, and Vercel project settings)**
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Project URL (public). |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Publishable key (public by design; the app refuses a secret key). |
 
 **Worker (`backend/.env`)**
 
@@ -74,6 +82,8 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | Android SDK + JDK | current | Android builds, plus `apksigner`/`aapt` used by the release script's safety checks. |
 
 ## Main libraries
+
+**Web app** — `vite`, `react` 19, `@supabase/supabase-js`, TypeScript, `vitest`.
 
 **Mobile app** — `react-native` 0.86, `react` 19, `@supabase/supabase-js`,
 `@react-native-async-storage/async-storage`, `react-native-safe-area-context`,

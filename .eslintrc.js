@@ -1,5 +1,5 @@
 module.exports = {
   root: true,
   extends: '@react-native',
-  ignorePatterns: ['backend/', 'node_modules/'],
+  ignorePatterns: ['backend/', 'webapp/', 'web/', 'node_modules/'],
 };

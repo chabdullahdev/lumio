@@ -1,8 +1,10 @@
 # LUMIO landing page
 
 One static page (`index.html`), no build step, no scripts from other sites. Deployed to
-**https://lumio.mabdullahshahzad.com** with Vercel (Root Directory: `web`, framework preset
-**Other**).
+**https://lumio.mabdullahshahzad.com** with Vercel. The Vercel project's Root Directory is the
+**repository root**: the root `vercel.json` builds the web app (`webapp/` → `web/app/`) and
+serves this `web/` folder, so the landing page lives at `/` and the full web app at `/app/`
+(see `docs/WORKFLOWS.md`, "The web app"). `web/app/` is generated and gitignored.
 
 ## What the page does
 
@@ -10,7 +12,8 @@ One static page (`index.html`), no build step, no scripts from other sites. Depl
   Storage bucket and points at the newest APK, so publishing a new build
   (`npm run release:publish`) updates the page automatically. If the manifest cannot be read
   it falls back to `lumio-1.apk`.
-- There is no sign-in on the website. Accounts are created inside the app (email or Google).
+- The landing page itself has no sign-in. **Open in your browser** goes to the web app at `/app/`,
+  where accounts work the same as in the phone app (email or Google).
 - Nothing secret lives here: the page contains no keys at all.
 
 The sample quote in the phone preview is a real sentence from the stored text of Thucydides'

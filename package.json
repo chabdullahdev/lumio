@@ -8,6 +8,8 @@
     "lint": "eslint .",
     "postinstall": "node scripts/pod-install.js",
     "doctor": "node scripts/machine-check.mjs",
+    "web:dev": "npm --prefix webapp run dev",
+    "web:build": "npm --prefix webapp run build",
     "icons": "node scripts/generate-icons.mjs",
     "release:publish": "node --env-file-if-exists=backend/.env scripts/publish-android-release.mjs",
     "start": "react-native start",

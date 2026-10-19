@@ -39,9 +39,9 @@ carry secrets or large generated files, so a second machine needs these once:
 
 | Not in git | What to do on the new machine |
 | --- | --- |
-| `.env` and `backend/.env` (keys) | Copy them from the first machine (AirDrop, USB, password manager). Never email or commit them. |
+| `.env`, `backend/.env` and `webapp/.env.local` (keys) | Copy them from the first machine (AirDrop, USB, password manager). Never email or commit them. |
 | Android signing key (`android/app/lumio-release.keystore`, `android/keystore.properties`) | Copy both. Only needed to publish app updates. |
-| Installed packages | `npm install` and `cd backend && npm install` |
+| Installed packages | `npm install`, `cd backend && npm install` and `cd webapp && npm install` |
 | The AI model | `ollama pull qwen3.5:9b` |
 | Your git name and email | `git config user.name "chabdullahdev"` and `git config user.email "238083306+chabdullahdev@users.noreply.github.com"` (inside the project) |
 | GitHub login | `gh auth login` as `chabdullahdev` |
@@ -262,6 +262,50 @@ Run the librarian and the worker on only one computer at a time.
 5. Commit and push to `master`; Vercel redeploys.
 6. Refresh the cached preview in Facebook's Sharing Debugger / LinkedIn's Post
    Inspector.
+
+---
+
+## 7b. The web app (runs in the browser, alongside the phone app)
+
+**Run it on your computer**
+
+```bash
+cd webapp
+npm install                              # once
+cp .env.example .env.local               # fill in the URL + publishable key (same as the phone app's .env)
+npm run dev                              # opens http://localhost:5173/app/
+```
+
+From the project root you can also use `npm run web:dev` and `npm run web:build`.
+With no `.env.local` the app still runs in **sample mode** (placeholder lessons).
+
+**Checks** (run before committing): `cd webapp && npm run typecheck && npm test && npm run build`.
+`typecheck` needs the phone app's packages installed too (`npm install` in the project
+root), because the web app type-checks the phone app's shared data code.
+
+**What is shared.** The database code (`src/data`) comes from the phone app, so
+change a query there and both apps get it. If you change `src/data/*`, run
+the phone app's checks too (`npm run typecheck && npm test` in the root).
+Screens are *not* shared: the web screens live in `webapp/src/screens/` and
+must be updated by hand when a phone screen changes its behaviour or wording.
+
+**Adding a web page:** add a route in `src/router.ts`, a screen in `src/screens/`,
+and a case in `src/App.tsx`. Keep it working on phones (the nav becomes a bottom bar
+under 640 px) and in light and dark mode.
+
+**Deploying (Vercel, your account)**
+
+1. In Vercel, import the GitHub repo `chabdullahdev/lumio` with **Root Directory = the
+   repository root** (not `web`). The root `vercel.json` already sets the build
+   (`webapp` → `web/app/`) and serves `web/`.
+2. Add two environment variables to the project (both public values):
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Without them the
+   deployed web app runs in sample mode only.
+3. Deploy. The landing page is at `/` and the web app at `/app/`.
+4. In **Supabase → Authentication → URL Configuration → Redirect URLs**, add
+   `https://lumio.mabdullahshahzad.com/app/` (and `http://localhost:5173/app/` for local
+   testing). Without this, "Continue with Google" cannot return to the web app.
+5. Email sign-up links also return to `/app/`, so keep that URL on the same list.
 
 ---
 
