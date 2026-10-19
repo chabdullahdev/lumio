@@ -9,7 +9,6 @@ import {
   Field,
   LoadingView,
   MutedText,
-  Pill,
   PrimaryButton,
   Screen,
   SectionTitle,
@@ -196,14 +195,7 @@ export function ProfileScreen() {
 
       <SectionTitle>Account</SectionTitle>
       <Card>
-        <View style={styles.accountRow}>
-          <MutedText>Data source</MutedText>
-          <Pill
-            label={useSample ? 'Sample library' : 'Supabase account'}
-            tone={useSample ? 'warning' : 'accent'}
-          />
-        </View>
-        <MutedText style={styles.timezone}>Time zone: {profile.timezone}</MutedText>
+        <MutedText>Time zone: {profile.timezone}</MutedText>
         {!useSample ? (
           <PrimaryButton
             label="Sign out"
@@ -341,11 +333,6 @@ function createStyles(theme: Theme) {
       marginTop: theme.spacing(3),
       fontSize: theme.type.tiny,
       color: theme.colors.textSecondary,
-    },
-    accountRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
     },
     timezone: {
       marginTop: theme.spacing(3),

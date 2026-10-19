@@ -34,8 +34,22 @@ const GLYPH_PATH =
 const markSvg = (fill) =>
   `<svg width="76" height="76" viewBox="0 5 76 76" xmlns="http://www.w3.org/2000/svg"><path d="${MARK_PATH}" fill="${fill}"/></svg>`;
 
+/**
+ * Adaptive icons are drawn on a 108dp canvas, but launchers mask them (circle,
+ * squircle, ...) and only the central 66dp is guaranteed to stay visible. The
+ * mark is sized to this share of that safe zone so its corners are never cut.
+ */
+const SAFE_ZONE_DP = 66;
+const CANVAS_DP = 108;
+const GLYPH_SHARE_OF_SAFE_ZONE = 0.6;
+
+/** The glyph's own bounding box in the 252-unit canvas (centred on 126,126). */
+const GLYPH_BOX = 192.78 - 59.2197;
+const GLYPH_SCALE =
+  ((SAFE_ZONE_DP * GLYPH_SHARE_OF_SAFE_ZONE) / CANVAS_DP) * (252 / GLYPH_BOX);
+
 const glyphSvg = (fill) =>
-  `<svg width="252" height="252" viewBox="0 0 252 252" xmlns="http://www.w3.org/2000/svg"><path d="${GLYPH_PATH}" fill="${fill}"/></svg>`;
+  `<svg width="252" height="252" viewBox="0 0 252 252" xmlns="http://www.w3.org/2000/svg"><path transform="translate(126 126) scale(${GLYPH_SCALE.toFixed(5)}) translate(-126 -126)" d="${GLYPH_PATH}" fill="${fill}"/></svg>`;
 
 const appIconSvg = readFileSync(join(root, 'public', 'LUMIO app icon.svg'), 'utf8');
 const resDir = join(root, 'android', 'app', 'src', 'main', 'res');
