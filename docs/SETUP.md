@@ -112,6 +112,32 @@ update public.jobs
  where idempotency_key = 'replenish:<user-id>';
 ```
 
+### Adding books to the library
+
+`backend/scripts/ingest-library.ts` is the book intake. It reads the reading list and
+concept map in `backend/src/library/catalog.ts` (Project Gutenberg public-domain books only),
+then for each book: downloads the EPUB → splits it into chapters → cuts ~250-word passages →
+stores the source, an **approved `public_domain` licensing record**, the chapters and the
+passages → creates the concepts and links each concept to its best-matching passages
+(up to 12, found by keyword rules).
+
+```bash
+cd backend
+node scripts/ingest-library.ts                                   # dry run: parse + report, writes nothing
+node scripts/ingest-library.ts --show                            # dry run + preview the best passages per concept
+node --env-file-if-exists=.env scripts/ingest-library.ts --apply # write to Supabase
+node ... --apply --only 3207,1232                                # just some Gutenberg ids
+```
+
+It is safe to re-run: books already stored (same Gutenberg URL or file hash) are skipped,
+concepts are matched by name, and keyword links are replaced rather than duplicated. To add a
+book, add it to `BOOKS` and add (or extend) a concept in `CONCEPTS`, dry-run with `--show`,
+check the previewed passages, then `--apply`. Links are capped at 12 per concept because the
+lesson selector loads every linked passage for a user's concepts in one request.
+
+Keyword links are a first pass, not editorial review: spot-check a few lessons per concept
+before relying on them. Embeddings are not generated yet.
+
 ### Generating one lesson offline
 
 For reviewing lesson quality without a service-role key there is a
