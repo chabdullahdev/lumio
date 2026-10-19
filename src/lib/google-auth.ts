@@ -101,6 +101,24 @@ function waitForRedirect(): Waiter {
   return { promise, cancel: () => finish(null) };
 }
 
+/**
+ * Finish a Google sign-in from a redirect URL. Used when Android closed the app
+ * while the user was in the browser: the link then launches the app fresh, and
+ * the saved PKCE verifier (kept in storage by Supabase) still lets us finish.
+ * Returns null when the URL is not the sign-in redirect.
+ */
+export async function completeGoogleSignInFromUrl(url: string): Promise<GoogleSignInResult | null> {
+  const callback = parseAuthCallback(url);
+  if (callback === null) {
+    return null;
+  }
+  if ('error' in callback) {
+    return { ok: false, message: callback.error };
+  }
+  const exchange = await getSupabase().auth.exchangeCodeForSession(callback.code);
+  return exchange.error ? { ok: false, message: exchange.error.message } : { ok: true };
+}
+
 export async function signInWithGoogle(): Promise<GoogleSignInResult> {
   const supabase = getSupabase();
   const { data, error } = await supabase.auth.signInWithOAuth({

@@ -16,9 +16,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured } from '../lib/env';
-import { signInWithGoogle as startGoogleSignIn } from '../lib/google-auth';
+import { completeGoogleSignInFromUrl, signInWithGoogle as startGoogleSignIn } from '../lib/google-auth';
 import { getSupabase } from '../lib/supabase';
 import { sampleApi } from '../data/sample-api';
 import { supabaseApi } from '../data/supabase-api';
@@ -134,6 +135,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setStatus(profile.interests.length > 0 ? 'ready' : 'signedOut');
         }
         return;
+      }
+
+      // If Android restarted the app to deliver a Google sign-in link, finish it first.
+      try {
+        const launchUrl = await Linking.getInitialURL();
+        if (launchUrl) {
+          await completeGoogleSignInFromUrl(launchUrl);
+        }
+      } catch {
+        // Not a sign-in link, or it could not be completed: fall through to the saved session.
       }
 
       const { data, error } = await getSupabase().auth.getSession();
