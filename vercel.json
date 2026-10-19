@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm --prefix webapp ci",
+  "installCommand": "npm ci --ignore-scripts && npm --prefix webapp ci",
   "buildCommand": "npm --prefix webapp run build",
   "outputDirectory": "web",
   "cleanUrls": true,
