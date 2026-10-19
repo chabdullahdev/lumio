@@ -89,58 +89,20 @@ export type CandidateData = {
   completedAtByCategory: Record<string, string>;
   concepts: CandidateConcept[];
   passages: CandidatePassage[];
+  /** Titles of the user's most recent lessons, newest first (helps the AI vary topics). */
+  recentLessonTitles?: string[];
 };
 
 /**
- * Pure selection. Returns null when the user's interest graph plus approved
- * library cannot satisfy the minimums (>= 2 concepts, >= 3 passages).
+ * Concepts in one category that have at least one eligible passage, best
+ * first: never-covered concepts (most relevant first), then previously
+ * covered ones (least recently covered first).
  */
-export function chooseLessonPlan(data: CandidateData): LessonPlan | null {
-  if (data.interests.length === 0) {
-    return null;
-  }
-
-  // 1) Category: avoid repeating what is already queued; then prefer the
-  //    category served least recently (never served = earliest).
-  const eligibleCategories = data.interests.filter(
-    interest => !data.queuedCategoryIds.includes(interest.categoryId),
-  );
-  const categoryPool = eligibleCategories.length > 0 ? eligibleCategories : data.interests;
-  const sortedCategories = [...categoryPool].sort((a, b) => {
-    const aSeen = data.completedAtByCategory[a.categoryId] ?? '';
-    const bSeen = data.completedAtByCategory[b.categoryId] ?? '';
-    if (aSeen !== bSeen) {
-      return aSeen < bSeen ? -1 : 1;
-    }
-    if (a.weight !== b.weight) {
-      return b.weight - a.weight;
-    }
-    return a.categoryName.localeCompare(b.categoryName);
-  });
-  const category = sortedCategories[0]!;
-
-  // 2) Passages that are eligible at all: linked to this category's concepts,
-  //    from ready/approved sources, not already used in one of the user's
-  //    lessons.
-  const conceptIdsInCategory = new Set(
-    data.concepts.filter(concept => concept.categoryId === category.categoryId).map(c => c.id),
-  );
-  const passagesByConcept = new Map<string, CandidatePassage[]>();
-  for (const passage of data.passages) {
-    if (!conceptIdsInCategory.has(passage.conceptId)) {
-      continue;
-    }
-    const list = passagesByConcept.get(passage.conceptId) ?? [];
-    list.push(passage);
-    passagesByConcept.set(passage.conceptId, list);
-  }
-
-  // 3) Concepts: first those never covered (most relevant first), then
-  //    previously covered ones (least recently covered first). Only concepts
-  //    with at least one eligible passage can lead a lesson.
-  const usableConcepts = data.concepts
-    .filter(concept => concept.categoryId === category.categoryId)
-    .filter(concept => (passagesByConcept.get(concept.id)?.length ?? 0) > 0)
+function usableConceptsIn(data: CandidateData, categoryId: string): CandidateConcept[] {
+  const inCategory = data.concepts.filter(concept => concept.categoryId === categoryId);
+  const withPassages = new Set(data.passages.map(passage => passage.conceptId));
+  return inCategory
+    .filter(concept => withPassages.has(concept.id))
     .sort((a, b) => {
       const aNew = a.coveredTimes === 0 ? 0 : 1;
       const bNew = b.coveredTimes === 0 ? 0 : 1;
@@ -158,8 +120,106 @@ export function chooseLessonPlan(data: CandidateData): LessonPlan | null {
         return b.relevance - a.relevance;
       }
       return a.name.localeCompare(b.name);
-    })
-    .slice(0, MAX_CONCEPTS);
+    });
+}
+
+/** Categories the user may be served next: not already queued (unless all are). */
+function eligibleInterests(data: CandidateData): CandidateInterest[] {
+  const eligible = data.interests.filter(
+    interest => !data.queuedCategoryIds.includes(interest.categoryId),
+  );
+  return eligible.length > 0 ? eligible : data.interests;
+}
+
+export type PlanOption = {
+  /** 1-based number shown to the AI. */
+  id: number;
+  conceptId: string;
+  conceptName: string;
+  categoryName: string;
+  timesCovered: number;
+  lastCoveredAt: string | null;
+};
+
+const OPTIONS_PER_CATEGORY = 3;
+
+/**
+ * The valid "what to teach next" choices the AI may pick from: the best few
+ * lead concepts per eligible category, interleaved so every interest is
+ * represented. Only categories that can support a lesson are listed, so any
+ * option the AI picks can actually be turned into a plan.
+ */
+export function listPlanOptions(data: CandidateData, max = 8): PlanOption[] {
+  const perCategory = eligibleInterests(data)
+    .filter(interest => usableConceptsIn(data, interest.categoryId).length >= 2)
+    .map(interest => ({
+      interest,
+      leads: usableConceptsIn(data, interest.categoryId).slice(0, OPTIONS_PER_CATEGORY),
+    }));
+  const options: PlanOption[] = [];
+  for (let round = 0; round < OPTIONS_PER_CATEGORY && options.length < max; round += 1) {
+    for (const { interest, leads } of perCategory) {
+      const lead = leads[round];
+      if (lead && options.length < max) {
+        options.push({
+          id: options.length + 1,
+          conceptId: lead.id,
+          conceptName: lead.name,
+          categoryName: interest.categoryName,
+          timesCovered: lead.coveredTimes,
+          lastCoveredAt: lead.lastCoveredAt,
+        });
+      }
+    }
+  }
+  return options;
+}
+
+/**
+ * Pure selection. Returns null when the user's interest graph plus approved
+ * library cannot satisfy the minimums (>= 2 concepts, >= 3 passages).
+ *
+ * `leadConceptId` is the AI's choice of what to teach next. It is honoured
+ * only when it is a concept that can really lead a lesson for this user;
+ * otherwise (or when omitted) the built-in rules decide.
+ */
+export function chooseLessonPlan(
+  data: CandidateData,
+  leadConceptId: string | null = null,
+): LessonPlan | null {
+  if (data.interests.length === 0) {
+    return null;
+  }
+
+  // 1) Category: avoid repeating what is already queued; then prefer the
+  //    category served least recently (never served = earliest).
+  const sortedCategories = [...eligibleInterests(data)].sort((a, b) => {
+    const aSeen = data.completedAtByCategory[a.categoryId] ?? '';
+    const bSeen = data.completedAtByCategory[b.categoryId] ?? '';
+    if (aSeen !== bSeen) {
+      return aSeen < bSeen ? -1 : 1;
+    }
+    if (a.weight !== b.weight) {
+      return b.weight - a.weight;
+    }
+    return a.categoryName.localeCompare(b.categoryName);
+  });
+  let category = sortedCategories[0]!;
+  let conceptOrder = usableConceptsIn(data, category.categoryId);
+
+  // 2) The AI's choice wins when it is valid for this user.
+  const lead = leadConceptId ? data.concepts.find(concept => concept.id === leadConceptId) : undefined;
+  const leadInterest = lead ? eligibleInterests(data).find(i => i.categoryId === lead.categoryId) : undefined;
+  if (lead && leadInterest) {
+    const leadRanked = usableConceptsIn(data, leadInterest.categoryId);
+    if (leadRanked.some(concept => concept.id === lead.id)) {
+      category = leadInterest;
+      conceptOrder = [lead, ...leadRanked.filter(concept => concept.id !== lead.id)];
+    }
+  }
+
+  // 3) Concepts: the lead first, then the best of the rest.
+  const usableConcepts = conceptOrder.slice(0, MAX_CONCEPTS);
 
   if (usableConcepts.length < 2) {
     return null;
@@ -300,6 +360,15 @@ export async function loadCandidateData(
       .eq('user_id', userId),
     admin.from('lessons').select('id').eq('user_id', userId),
   ]);
+  const recentResult = await admin
+    .from('lessons')
+    .select('title')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(8);
+  const recentLessonTitles = unwrapRows(recentResult.data, recentResult.error, 'Could not load recent lessons')
+    .map(row => str(asRow(row)?.title))
+    .filter((title): title is string => title !== null);
 
   const queuedCategoryIds: string[] = [];
   for (const rawRow of unwrapRows(queueResult.data, queueResult.error, 'Could not load the lesson queue')) {
@@ -434,5 +503,6 @@ export async function loadCandidateData(
     completedAtByCategory,
     concepts,
     passages,
+    recentLessonTitles,
   };
 }

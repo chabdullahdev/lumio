@@ -61,6 +61,7 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | `WORKER_POLL_MS` | `15000` | Idle wait between polls. |
 | `LIBRARIAN_INTERVAL_MS` | `1800000` | Wait between librarian rounds (30 min). |
 | `LIBRARIAN_PICK` | `5` | Books the AI may choose per round. |
+| `LUMIO_AI_PLANNER` | on | Set to `off` to stop the AI choosing each user's next topic (rules only). |
 
 ## Tools you need installed
 
@@ -97,7 +98,7 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 ## AI model
 
 - **Ollama** runs on the developer's machine, bound to `127.0.0.1`. The only model kept is `qwen3.5:9b` (`ollama pull qwen3.5:9b`).
-- The AI does two jobs: it **chooses new books and their concepts** (librarian) and **writes lessons** (worker). It never browses the internet; it only sees lists and passages the code hands it.
+- The AI does three jobs: it **chooses new books and their concepts** (librarian), **decides what each user learns next**, and **writes the lesson** (worker). Code always limits it to valid, licensed options. It never browses the internet; it only sees lists and passages the code hands it.
 - The model only receives passages chosen by the worker; its output is
   validated (structure, length, takeaways, source use) before storage.
 - Rough cost/time: one ~850-word lesson took about 7 minutes on `qwen3.5:9b`.

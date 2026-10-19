@@ -131,7 +131,8 @@ runs natively — no build step.
 backend/
 ├── src/
 │   ├── worker/main.ts      Poll loop: enqueue → claim → generate → complete/fail
-│   ├── lessons/            candidates.ts (pick material), prompt.ts, generate.ts,
+│   ├── lessons/            candidates.ts (valid choices + passages), planner.ts (AI picks what's next),
+│   │                       prompt.ts, generate.ts,
 │   │                       validate.ts, types.ts
 │   ├── library/            catalog.ts (reading list), epub.ts, passages.ts,
 │   │                       gutenberg-catalog.ts, curate.ts, book-files.ts, store.ts

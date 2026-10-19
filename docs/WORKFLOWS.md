@@ -110,11 +110,22 @@ Each pass:
 1. `enqueue_replenish_jobs` — every onboarded user with fewer than 3 queued
    lessons gets a generation job.
 2. `claim_jobs` — take due jobs safely (no double-processing).
-3. Select passages → build prompt → ask Ollama → **validate** → store lesson,
-   takeaways, sources → `complete_job`.
-4. If the local AI is not running, the worker **waits and logs it** instead of
+3. **The AI decides what to teach next.** The code lists the valid choices for
+   this user (concepts that have licensed, unused passages, from categories
+   not already in their queue). The AI sees that numbered list, the user's
+   interests and their recent lesson titles, and picks one. It prefers new
+   ideas and a different subject from recent lessons. If the AI answers badly,
+   fails, or picks something not on the list, the built-in rules choose
+   instead, so a lesson is never blocked. The choice and its reason are saved
+   with the lesson (`quality_report.chosen_by`, `choice_reason`).
+4. Select passages for that concept → build prompt → ask Ollama → **validate**
+   → store lesson, takeaways, sources → `complete_job`.
+
+To switch the AI planner off and use only the rules, set
+`LUMIO_AI_PLANNER=off` in `backend/.env`.
+5. If the local AI is not running, the worker **waits and logs it** instead of
    claiming jobs, so no retry attempts are wasted.
-5. On failure: retry with backoff (30 s doubling, capped at 20 min) up to 5
+6. On failure: retry with backoff (30 s doubling, capped at 20 min) up to 5
    attempts, then the job is marked **dead**.
 
 **Dead jobs.** If the library can't support a user's interests, the job is

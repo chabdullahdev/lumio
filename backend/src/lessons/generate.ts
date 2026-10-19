@@ -19,6 +19,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { chatJson, type OllamaOptions } from '../ollama.ts';
 import { chooseLessonPlan, loadCandidateData } from './candidates.ts';
+import { askPlanner } from './planner.ts';
 import { PROMPT_VERSION, buildLessonPrompt } from './prompt.ts';
 import { extractJsonObject, validateGeneratedLesson } from './validate.ts';
 import type { GeneratedLesson, GeneratedLessonStats, LessonPlan } from './types.ts';
@@ -164,11 +165,19 @@ export async function generateLessonForUser(
   }
 
   // --- Plan, generate, validate ---------------------------------------------
-  const plan = chooseLessonPlan(await loadCandidateData(admin, userId));
+  const candidateData = await loadCandidateData(admin, userId);
+  // The AI decides what to teach next; the rules are the safety net. Set
+  // LUMIO_AI_PLANNER=off to use the rules alone.
+  const aiChoice =
+    process.env.LUMIO_AI_PLANNER === 'off' ? null : await askPlanner(context.ollama, candidateData, log);
+  const plan = chooseLessonPlan(candidateData, aiChoice?.option.conceptId ?? null);
   if (!plan) {
     throw new InsufficientMaterialError(
       'Not enough approved library material for this user\u2019s interests (need >= 2 concepts with passages and >= 3 distinct passages).',
     );
+  }
+  if (aiChoice && plan.concepts[0]?.id === aiChoice.option.conceptId) {
+    log(`the AI chose "${aiChoice.option.conceptName}" (${aiChoice.option.categoryName}): ${aiChoice.reason}`);
   }
   log(
     `plan: ${plan.categoryName} \u2014 ${plan.concepts.map(c => c.name).join(', ')} ` +
@@ -210,6 +219,8 @@ export async function generateLessonForUser(
         passage_ids: plan.passages.map(passage => passage.id),
         concepts_covered: lesson.conceptsCovered,
         prompt_version: PROMPT_VERSION,
+        chosen_by: aiChoice && plan.concepts[0]?.id === aiChoice.option.conceptId ? 'ai' : 'rules',
+        choice_reason: aiChoice?.reason ?? null,
       },
     })
     .select('id')
