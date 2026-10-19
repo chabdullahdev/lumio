@@ -2,6 +2,7 @@
   "name": "lumio-backend",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "LUMIO background workers: book ingestion, knowledge extraction, lesson generation, queue replenishment. Runs beside the developer's machine against Supabase.",
   "type": "module",
   "engines": {

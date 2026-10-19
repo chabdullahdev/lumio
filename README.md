@@ -8,6 +8,12 @@ knowledge library.
 
 - Product overview, screens plan, and brand: [APP.md](APP.md)
 - Full development setup: [docs/SETUP.md](docs/SETUP.md)
+- Where everything lives, services and keys, and step-by-step procedures:
+  [docs/STRUCTURE.md](docs/STRUCTURE.md), [docs/RESOURCES.md](docs/RESOURCES.md),
+  [docs/WORKFLOWS.md](docs/WORKFLOWS.md)
+- **Open source** under the [MIT License](LICENSE). Contributions welcome:
+  [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+  Third-party content and branding: [NOTICE.md](NOTICE.md).
 
 ## Project layout
 
@@ -15,7 +21,9 @@ knowledge library.
 | --- | --- |
 | `App.tsx`, `src/` | The React Native app (screens, state, Supabase client, theme) |
 | `__tests__/`, `src/**/__tests__/` | Jest tests |
-| `backend/` | Node.js background workers (lesson generation, queue replenishment) |
+| `webapp/` | The web app (React + Vite), served at `/app/`; reuses the phone app's data code |
+| `web/` | The landing page (static HTML) |
+| `backend/` | Node.js background workers (lesson generation, queue replenishment, library librarian) |
 | `backend/scripts/` | Tooling: migration validation, library seed generation, offline lesson preview |
 | `supabase/migrations/` | Versioned PostgreSQL schema (applied and verified on the development project) |
 | `supabase/seed/` | Frozen source snapshot behind the seeded library (CC BY-SA; see `docs/SETUP.md`) |
@@ -33,7 +41,13 @@ cd backend
 npm install
 copy .env.example .env           # fill in Supabase URL + service-role key
 npm run check                    # validates the backend environment
+
+cd ../webapp
+npm install
+copy .env.example .env.local     # same URL + publishable key; then `npm run dev`
 ```
+
+On a new computer, `npm run doctor` lists exactly what is still missing.
 
 The app builds and previews inside Ship Studio; see [docs/SETUP.md](docs/SETUP.md)
 for details, including how the database migrations were applied and verified.
