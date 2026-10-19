@@ -1,0 +1,19 @@
+# LUMIO
+
+> LUMIO is a free Android app that gives you one focused, 15-minute reading lesson a day, chosen for you from classic public-domain books and openly licensed articles. Each lesson ends with 3 to 5 key takeaways and lists its sources. Tagline: "Less scrolling. More understanding."
+
+## Facts
+
+- What it is: a daily lesson app (not a social network, no ads, no quizzes or tests).
+- Subjects today: Geopolitics, History, Islam, Politics, Psychology, Science.
+- Platform: Android (direct APK download). iPhone is planned for later.
+- Price: free.
+- Accounts: sign up inside the app with email or Google.
+- Sources: public-domain books (for example Darwin, Einstein, Thucydides, William James, Mill) and openly licensed articles. Lessons are drafted with AI from approved source passages and checked by software, so they can contain errors.
+- Developer: Abdullah Shahzad (https://mabdullahshahzad.com).
+
+## Pages
+
+- [Home](https://lumio.mabdullahshahzad.com/): what LUMIO is, how it works, topics, install steps and FAQ.
+- [Privacy Policy](https://lumio.mabdullahshahzad.com/privacy)
+- [Terms of Service](https://lumio.mabdullahshahzad.com/terms)

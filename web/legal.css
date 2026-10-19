@@ -38,6 +38,8 @@ th { color: var(--text-2); font-weight: 600; width: 34%; }
 footer { border-top: 1px solid var(--border); padding: 24px 0 44px; color: var(--text-2); font-size: 14px; }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; }
 footer a { color: var(--text-2); }
+footer .credit a { color: var(--accent); font-weight: 600; text-decoration: none; }
+footer .credit a:hover { text-decoration: underline; }
 @media (max-width: 560px) {
   body { font-size: 16px; }
   th, td { display: block; width: 100%; padding: 4px 0; border: 0; }
