@@ -180,6 +180,19 @@ node scripts/generate-preview.ts path/to/candidate-data.json --out lesson.json
 
 ---
 
+### 5a. Second book source: Standard Ebooks (November 2026)
+
+Twelve more public-domain books were added from **Standard Ebooks**, whose texts are public on GitHub
+(`github.com/standardebooks/<author>_<title>`) and publish only US public-domain works: Meditations, Nicomachean Ethics,
+An Enquiry Concerning Human Understanding, The Varieties of Religious Experience, The Social Contract, A Vindication of the
+Rights of Woman, The Subjection of Women, The Wealth of Nations, The English Constitution, Reflections on the Revolution in
+France, Discourses on Livy and The Voyage of the Beagle. They are stored like every other book (`publisher = 'Standard Ebooks'`,
+public-domain licence record approved) with 29 new concepts, each linked to its 12 best keyword-matching passages
+(link `method = 'keywords'`). The import ran inside the database (it fetched the text from GitHub itself), because the
+developer sandbox could not reach Gutenberg. To add more, repeat the same steps for another Standard Ebooks repository:
+read its `content.opf` for the chapter order, strip the markup, cut into ~250-word passages, record the licence, then link
+concepts. Passages are keyword-matched, not AI-read, so spot-check a few lessons per new concept.
+
 ### 5b. The librarian: finding new books automatically
 
 A background program that keeps the library growing without you picking books.
