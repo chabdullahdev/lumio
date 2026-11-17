@@ -278,6 +278,9 @@ npm run dev                              # opens http://localhost:5173/app/
 From the project root you can also use `npm run web:dev` and `npm run web:build`.
 With no `.env.local` the app still runs in **sample mode** (placeholder lessons).
 
+**Production settings.** `webapp/.env.production` holds the (public) database URL and publishable key, so every build,
+including Vercel's, connects to the live database. Never put the secret key in it.
+
 **Checks** (run before committing): `cd webapp && npm run typecheck && npm test && npm run build`.
 `typecheck` needs the phone app's packages installed too (`npm install` in the project
 root), because the web app type-checks the phone app's shared data code.

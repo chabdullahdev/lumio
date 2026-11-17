@@ -90,3 +90,5 @@ yarn-error.log
 backend/library-data/
 
 .vercel
+
+!webapp/.env.production
