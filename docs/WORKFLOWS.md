@@ -193,6 +193,17 @@ developer sandbox could not reach Gutenberg. To add more, repeat the same steps 
 read its `content.opf` for the chapter order, strip the markup, cut into ~250-word passages, record the licence, then link
 concepts. Passages are keyword-matched, not AI-read, so spot-check a few lessons per new concept.
 
+### 5a-2. Islamic-studies books from Project Gutenberg's mirror (November 2026)
+
+Ten English public-domain books were added to the **Islam** subject from Gutenberg's file mirror
+(`gutenberg.pglaf.org`, the main site was refusing automated requests): The Mystics of Islam (Nicholson), Development of
+Muslim Theology, Jurisprudence and Constitutional Theory (Macdonald), The Islam of Mohamed (Khuda Bukhsh), Annals of the Early
+Caliphate (Muir), The Moors in Spain (Lane-Poole), Arabian Society in the Middle Ages (Lane), The Story of Islam (Lunt), The
+Development of Metaphysics in Persia (Iqbal), The Arab Conquests in Central Asia (Gibb) and Islam: Her Moral and Spiritual Value
+(Leonard), with 16 new concepts. Several are early-20th-century Western accounts; their concept descriptions say so, and
+lessons should present them as one viewpoint, not as settled fact. The trailing publisher advert catalogue of one book was
+removed after import. Not added: a missionary-polemic title (Zwemer) and The Dictionary of Islam (too large to fetch in one go).
+
 ### 5b. The librarian: finding new books automatically
 
 A background program that keeps the library growing without you picking books.
