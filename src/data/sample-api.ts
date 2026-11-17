@@ -21,6 +21,7 @@ import type {
   LessonContent,
   LessonSummary,
   LumioApi,
+  NotebookEntry,
   ProfileSnapshot,
   QueueItem,
   QueueStatus,
@@ -261,6 +262,28 @@ export const sampleApi: LumioApi = {
       throw new Error('Lesson not found.');
     }
     return lesson;
+  },
+
+  async getNotebook(): Promise<NotebookEntry[]> {
+    const db = await loadDb();
+    return Object.entries(db.progress)
+      .filter(([, p]) => p.completedAt)
+      .flatMap(([lessonId, p]) => {
+        const lesson = SAMPLE_LESSONS.find(l => l.id === lessonId);
+        if (!lesson || !p.completedAt) {
+          return [];
+        }
+        return [
+          {
+            lessonId,
+            title: lesson.title,
+            categoryName: lesson.categoryName,
+            completedAt: p.completedAt,
+            takeaways: lesson.takeaways,
+          },
+        ];
+      })
+      .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
   },
 
   async markOpened(lessonId: string): Promise<void> {

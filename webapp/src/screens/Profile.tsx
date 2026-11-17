@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from '../session';
 import type { Route } from '../router';
+import { InstallCard } from '../pwa';
 import { Button, Card, ErrorView, Loading, Muted, SectionTitle, topicEmoji, useLoad } from '../ui';
 
 export function Profile({ go }: { go: (route: Route) => void }) {
@@ -66,6 +67,8 @@ export function Profile({ go }: { go: (route: Route) => void }) {
           ))}
         </div>
       </Card>
+
+      <InstallCard allowDismiss={false} />
 
       <SectionTitle>Your topics</SectionTitle>
       <div className="chips">{profile.interests.map(topic => <span key={topic.id} className="chip">{topicEmoji(topic)} {topic.name}</span>)}</div>

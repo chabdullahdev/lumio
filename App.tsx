@@ -14,7 +14,6 @@ import { NavigationProvider, useNavigation } from './src/navigation/NavigationCo
 import { MainTabs } from './src/navigation/MainTabs';
 import { ErrorView, LoadingView, Screen } from './src/components/ui';
 import { SessionProvider, useSession } from './src/state/session';
-import { UpdatesProvider } from './src/state/updates';
 import { WelcomeScreen } from './src/screens/WelcomeScreen';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -108,9 +107,7 @@ function App() {
     <SafeAreaProvider>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <SessionProvider>
-        <UpdatesProvider>
-          <Root />
-        </UpdatesProvider>
+        <Root />
       </SessionProvider>
     </SafeAreaProvider>
   );

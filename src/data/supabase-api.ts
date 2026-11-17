@@ -20,6 +20,7 @@ import type {
   LessonSourceRef,
   LessonSummary,
   LumioApi,
+  NotebookEntry,
   ProfileSnapshot,
   QueueItem,
   QueueStatus,
@@ -526,6 +527,69 @@ export const supabaseApi: LumioApi = {
     if (updateError) {
       throw new Error(`Could not save your progress: ${updateError.message}`);
     }
+  },
+
+  async getNotebook(): Promise<NotebookEntry[]> {
+    const userId = await requireUserId();
+    const supabase = getSupabase();
+    const { data: progress, error: progressError } = await supabase
+      .from('user_lesson_progress')
+      .select('lesson_id, completed_at')
+      .eq('user_id', userId)
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: false })
+      .limit(100);
+    unwrap(progress, progressError, 'Could not load your notebook');
+    const done = asArray(progress)
+      .map(asRow)
+      .filter((row): row is Row => row !== null)
+      .flatMap(row => {
+        const lessonId = str(row.lesson_id);
+        const completedAt = str(row.completed_at);
+        return lessonId && completedAt ? [{ lessonId, completedAt }] : [];
+      });
+    if (done.length === 0) {
+      return [];
+    }
+    const ids = done.map(item => item.lessonId);
+    const [lessonsResult, takeawaysResult] = await Promise.all([
+      supabase.from('lessons').select('id, title, categories(name)').eq('user_id', userId).in('id', ids),
+      supabase.from('lesson_takeaways').select('lesson_id, position, text').in('lesson_id', ids).order('position'),
+    ]);
+    unwrap(lessonsResult.data, lessonsResult.error, 'Could not load your notebook lessons');
+    unwrap(takeawaysResult.data, takeawaysResult.error, 'Could not load your takeaways');
+    const lessons = new Map<string, Row>();
+    for (const row of asArray(lessonsResult.data).map(asRow)) {
+      const id = row ? str(row.id) : null;
+      if (row && id) {
+        lessons.set(id, row);
+      }
+    }
+    const takeaways = new Map<string, string[]>();
+    for (const row of asArray(takeawaysResult.data).map(asRow)) {
+      const lessonId = row ? str(row.lesson_id) : null;
+      const text = row ? str(row.text) : null;
+      if (lessonId && text) {
+        takeaways.set(lessonId, [...(takeaways.get(lessonId) ?? []), text]);
+      }
+    }
+    return done.flatMap(item => {
+      const lesson = lessons.get(item.lessonId);
+      const title = lesson ? str(lesson.title) : null;
+      const kept = takeaways.get(item.lessonId) ?? [];
+      if (!lesson || !title || kept.length === 0) {
+        return [];
+      }
+      return [
+        {
+          lessonId: item.lessonId,
+          title,
+          categoryName: str(asRow(lesson.categories)?.name),
+          completedAt: item.completedAt,
+          takeaways: kept,
+        },
+      ];
+    });
   },
 
   async completeLesson(lessonId: string): Promise<CompletionSummary> {

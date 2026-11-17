@@ -25,8 +25,7 @@ sources, and reference documents. For where code lives see
   `https://lumio.mabdullahshahzad.com/app/` (web; plus `http://localhost:5173/app/`
   for local testing) must be listed under Authentication → URL Configuration →
   Redirect URLs, or Google sign-in never returns to the app.
-- **Storage bucket `app-releases`** — public, 250 MB cap, APK and JSON only.
-  Holds `lumio-<versionCode>.apk` and `latest.json`. Created by migration 15.
+- **Storage bucket `app-releases`** — retired (old APK updater); unused, safe to delete.
 - **Auth setting to turn on before real users:** Leaked Password Protection
   (Authentication → password protection).
 
@@ -37,7 +36,6 @@ sources, and reference documents. For where code lives see
 | `SUPABASE_URL` | `.env` and `backend/.env` | App and worker (not secret). |
 | `SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`, or legacy anon key) | `.env` | The mobile app. Safe to ship because RLS protects the data. |
 | `SUPABASE_SERVICE_ROLE_KEY` (`sb_secret_…`, or legacy service_role JWT) | `backend/.env` only | The worker and the release script. Bypasses RLS — never in the app, never committed, never shared. |
-| Android signing keystore | `android/app/lumio-release.keystore` + `android/keystore.properties` | Release builds. Gitignored. **Back both up.** Losing them means every installed copy must be uninstalled before a new build can be installed. |
 
 All `.env` files are gitignored; only `.env.example` templates are committed.
 
@@ -80,7 +78,6 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | Ship Studio | current | Builds and previews the app. Don't run `react-native run-*` or `start` by hand. |
 | Ollama | current | Runs the lesson-writing model locally. |
 | Xcode + CocoaPods | current | iOS builds (macOS only). |
-| Android SDK + JDK | current | Android builds, plus `apksigner`/`aapt` used by the release script's safety checks. |
 
 ## Main libraries
 

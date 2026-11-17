@@ -37,7 +37,7 @@ LUMIO is made of four parts that share one database:
 - The **worker** is the only thing that creates lessons, using the secret key
   and a local AI model.
 - **Supabase** holds the data, enforces who can see what (Row Level Security),
-  and hosts the Android update files.
+.
 - The **website** is a separate static page; it contains no secrets.
 - The **web app** is the whole LUMIO experience in a browser. It talks to Supabase
   with the same publishable key and reuses the phone app's data code.
@@ -49,7 +49,7 @@ LUMIO is made of four parts that share one database:
 | `App.tsx` | Root of the mobile app: wraps everything in providers and picks the first screen. |
 | `index.js` | React Native entry point. Don't edit. |
 | `app.json` | App name registered with React Native. |
-| `package.json` | Mobile app dependencies and scripts (`typecheck`, `lint`, `test`, `icons`, `release:publish`). |
+| `package.json` | Mobile app dependencies and scripts (`typecheck`, `lint`, `test`, `icons`, `web:build`). |
 | `.env.example` | Template for the app's `.env` (Supabase URL + **publishable** key only). |
 | `APP.md` | Product description: purpose, screens, brand, tech summary. |
 | `README.md` | Short project overview and quick start. |
@@ -102,7 +102,6 @@ Explore, Profile.
 ### State (`src/state/`)
 
 - `session.tsx` — who is signed in, and which data mode is active.
-- `updates.tsx` — Android update availability and download progress.
 
 ### Data layer (`src/data/`)
 
@@ -122,7 +121,6 @@ implementations that return the same shapes (`types.ts`):
 | `env.ts` | Reads and validates `.env`; rejects a secret key if one is pasted by mistake. |
 | `supabase.ts` | Creates the Supabase client (or reports "not configured"). |
 | `google-auth.ts` | Google sign-in via Supabase (PKCE) using the `lumio://auth/callback` link. |
-| `updates.ts` | Checks `latest.json` for a newer Android build and hands off the install. |
 | `dates.ts` | Local-date helpers for streaks. |
 | `use-theme.ts` | Light/dark colours for components. |
 
@@ -183,7 +181,7 @@ Migration groups:
 | 10–11 | Starter subjects and seeded library. |
 | 12 | `dead_letter_job`. |
 | 13 | Owner-scoped read access to the sources behind a user's own lessons. |
-| 15 | Public `app-releases` storage bucket for Android builds. |
+| 15 | Public `app-releases` storage bucket (retired, no longer used). |
 
 ## `web/` — landing page
 
@@ -234,7 +232,6 @@ without a build step. Rebuild and commit it after changing the web app. The root
 | `generate-icons.mjs` | Builds launcher icons and in-app logos from `public/` (`npm run icons`). |
 | `generate-web-icons.mjs` | Builds the website's touch icons. |
 | `og-image.html` | Source for the 1200×630 share card. |
-| `publish-android-release.mjs` | Uploads an APK and `latest.json` (`npm run release:publish`). |
 | `pod-install.js` | Runs CocoaPods after `npm install` on macOS. |
 
 ## `public/`, `docs/`, `ios/`, `android/`
@@ -242,8 +239,7 @@ without a build step. Rebuild and commit it after changing the web app. The root
 - `public/` — master artwork (`LUMIO app icon.svg`, `LUMIO header logo.svg`).
 - `docs/` — this documentation: `SETUP.md`, `STRUCTURE.md`, `RESOURCES.md`, `WORKFLOWS.md`.
 - `ios/`, `android/` — native projects. Avoid hand-editing; Ship Studio builds
-  them. The Android project holds the version (`app/build.gradle`) and the
-  native updater module.
+  them. They are kept for a possible future store release; the live product is the web app.
 
 ## Never committed
 

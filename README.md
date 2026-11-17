@@ -2,9 +2,10 @@
 
 **Less scrolling. More understanding.**
 
-AI-powered personalized learning for Android and iOS: short, source-grounded
-reading lessons selected for each user from a growing, rights-reviewed
-knowledge library.
+Swap your scroll for the world's best ideas. One 15-minute lesson a day from
+classic books, picked for you, with every idea you keep saved in your own
+notebook. An installable web app (PWA): open it in a browser and add it to your
+home screen. No app store, no download file.
 
 - Product overview, screens plan, and brand: [APP.md](APP.md)
 - Full development setup: [docs/SETUP.md](docs/SETUP.md)

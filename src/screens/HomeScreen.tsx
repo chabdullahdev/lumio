@@ -16,7 +16,6 @@ import {
 } from '../components/ui';
 import { useNavigation } from '../navigation/NavigationContext';
 import { LogoMark } from '../components/logo';
-import { UpdateCard } from '../components/update-card';
 import { useSession } from '../state/session';
 import { useTheme } from '../lib/use-theme';
 import type { Theme } from '../theme';
@@ -108,8 +107,6 @@ export function HomeScreen() {
           tone={home.streak.current > 0 ? 'accent' : 'neutral'}
         />
       </View>
-
-      <UpdateCard />
 
       {home.next ? (
         <NextLessonCard

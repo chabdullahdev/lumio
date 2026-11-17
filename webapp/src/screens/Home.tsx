@@ -1,6 +1,7 @@
 import type { HomeSnapshot, QueueItem } from '@shared/data/types';
 import { useSession } from '../session';
 import type { Route } from '../router';
+import { InstallCard } from '../pwa';
 import { Button, Card, Empty, ErrorView, Loading, Logo, Muted, Pill, SectionTitle, useLoad } from '../ui';
 
 function greeting(): string {
@@ -36,6 +37,8 @@ export function Home({ go }: { go: (route: Route) => void }) {
         </div>
         <Pill tone={home.streak.current > 0 ? 'accent' : 'neutral'}>{streakLabel(home.streak)}</Pill>
       </header>
+
+      <InstallCard />
 
       {home.next ? (
         <Card className="hero-card">

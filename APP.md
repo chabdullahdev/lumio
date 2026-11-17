@@ -2,10 +2,20 @@
 
 **Less scrolling. More understanding.**
 
-LUMIO is an AI-powered personalized learning app for Android and iOS. It
-replaces mindless scrolling with meaningful learning: short (~15 minute)
-reading lessons chosen for each user from a curated, rights-reviewed
-knowledge library.
+LUMIO is an installable web app (PWA) that swaps your scroll for the world's best
+ideas. One ~15 minute lesson a day, chosen for you from classic books in a
+curated, rights-reviewed library, and every takeaway you finish is saved into
+your own searchable **notebook**.
+
+**Positioning (restarted November 2026):** "Swap your scroll for the world's best
+ideas." The benefit to the reader is not just reading: they keep something. Each
+session leaves them with ideas in a notebook they can search and revisit, with
+sources they can trace, a streak that never nags, and nothing to choose or
+install from a store.
+
+**Delivery:** a PWA at `/app/` on the website. Android and desktop show an Install
+button; iPhone uses Share, then Add to Home Screen. The old APK download and
+in-app updater were removed.
 
 ## What the app does
 
@@ -28,7 +38,8 @@ curriculum, or feel bad about missing a day.
 4. Reader — block-by-block reading, progress saved as you go
 5. Takeaways / completion — key takeaways, sources, completion summary
 6. Explore — selected topics and their next available lessons
-7. Profile — interests, reading time, reminders, streak history
+7. Notebook — every takeaway from finished lessons, searchable
+8. Profile — interests, reading time, reminders, streak history, install prompt
 
 The app has two data modes. **Sample mode** (bundled, clearly-labelled
 placeholder lessons) runs when Supabase is not configured, so the whole flow
@@ -44,7 +55,8 @@ backend worker, never in the app.
 
 ## Technical summary
 
-- **Mobile app:** bare React Native + TypeScript (built and previewed by Ship Studio).
+- **Web app (the product):** React + Vite in `webapp/`, installable PWA, shares the data layer in `src/data`.
+- **Native projects:** bare React Native in `src/`, `ios/`, `android/` (kept for a possible store release; no APK distribution).
 - **Backend workers:** Node.js + TypeScript in `backend/` — lesson generation, queue replenishment. Runs alongside the developer's machine; holds the service-role key.
 - **Data:** Supabase (PostgreSQL + Storage). Schema lives in `supabase/migrations/`.
 - **AI:** local Ollama models on the developer's machine, never exposed to the internet. The model only ever receives the extracts handed to it by the worker, and everything it returns is validated before storage.
