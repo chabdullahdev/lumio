@@ -88,6 +88,15 @@ export type ProfileSnapshot = {
   activity: ActivityDay[];
 };
 
+/** One finished lesson and the takeaways the reader kept from it. */
+export type NotebookEntry = {
+  lessonId: string;
+  title: string;
+  categoryName: string | null;
+  completedAt: string;
+  takeaways: string[];
+};
+
 export type CompletionSummary = {
   streak: Streak;
   lessonsCompleted: number;
@@ -113,4 +122,6 @@ export interface LumioApi {
   markOpened(lessonId: string): Promise<void>;
   saveProgress(lessonId: string, blockIndex: number): Promise<void>;
   completeLesson(lessonId: string): Promise<CompletionSummary>;
+  /** Takeaways from finished lessons, newest first (at most 100 lessons). */
+  getNotebook(): Promise<NotebookEntry[]>;
 }

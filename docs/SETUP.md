@@ -247,7 +247,7 @@ development project — see the two apply records after the table.
 | 12 | `..._12_dead_letter_jobs.sql` | `dead_letter_job`: terminal failure on first attempt, keeps the idempotency key to stop reconciliation churn |
 | 13 | `..._13_lesson_source_reads.sql` | owner-scoped read policies on `sources`/`licensing_records`/`passages` so the reader can show a lesson's source attribution (found by end-to-end testing under RLS) |
 | 14 | `..._14_job_search_path.sql` | explicit `set search_path = ''` on the job-protocol functions (advisor hygiene; behaviour unchanged) |
-| 15 | `..._15_app_releases_bucket.sql` | public `app-releases` Storage bucket (APK + `latest.json` for Android auto-update) |
+| 15 | `..._15_app_releases_bucket.sql` | public `app-releases` Storage bucket (retired: the APK updater was removed when LUMIO became an installable web app) |
 
 **Apply record (16 October 2026)** — applied via the Supabase MCP
 `apply_migration` tool: one call per file, in filename order, each preceded by
@@ -360,35 +360,20 @@ licensing record be used for a lesson.
 Rules: never edit a migration that has been applied — add a new one. No
 destructive operations without explicit approval.
 
-## 5. Releasing the Android app (auto-update)
+## 5. Shipping updates (the installable web app)
 
-Installed apps update themselves from the public **`app-releases`** storage
-bucket (migration 15). Release flow:
+LUMIO is delivered as an installable web app (PWA) at `/app/`. There is no APK, no
+store listing and no update download. To ship a change:
 
-1. Bump `versionCode` (and usually `versionName`) in `android/app/build.gradle`.
-2. Rebuild the release APK (Ship Studio: reopen the project).
-3. Publish it:
+1. `npm run web:build` (builds `webapp/` into `web/app/`), then commit `web/app/`.
+2. Push to `master`; Vercel redeploys.
+3. Installed copies fetch the new version the next time they are opened online
+   (`webapp/public/sw.js` serves pages network-first).
 
-   ```bash
-   npm run release:publish
-   ```
-
-   The script reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from
-   `backend/.env`, uploads `lumio-<versionCode>.apk` plus `latest.json`, and
-   refuses to replace a newer published build unless `--force` is passed.
-
-4. On next launch the app compares the published `versionCode` with the
-   installed one, shows an update card, downloads with progress, verifies the
-   APK's SHA-256, and hands it to the Android installer (the user confirms the
-   install; Android does not allow fully silent installs for normal apps).
-
-**Release signing.** The build reads `android/keystore.properties` and
-`android/app/lumio-release.keystore` (both gitignored). **Back both files up
-somewhere safe** — Android only accepts an update signed with the same key, so
-losing them means every installed app must be uninstalled before the next
-build can be installed. Without the properties file the release build falls
-back to the debug key (with a Gradle warning), which can still be installed
-fresh but can never update an existing release-signed install.
+Only change `CACHE` in `sw.js` when you change which files it pre-caches.
+Icons come from `node scripts/generate-web-icons.mjs`. The old `app-releases`
+storage bucket (migration 15) is no longer used; it was left in place rather
+than dropped, and can be deleted from the Supabase dashboard whenever you like.
 
 ## 6. Security rules (non-negotiable)
 
@@ -433,12 +418,7 @@ fresh but can never update an existing release-signed install.
   (renamed from the starter template). The iOS project folder is still
   `ios/ReactNativeStarter` and its bundle id has not been changed — harmless
   until an iOS build is set up, and changing it then does not affect Android.
-- **Auto-update is Android-only**: it installs signed APKs, so iOS would need
-  the App Store (or TestFlight) instead. Update UI hides itself when the
-  native module or backend config is missing.
-- **First install after the rename must be manual** (uninstall the old
-  `com.reactnativestarter` build, then install the new APK); automatic updates
-  apply from `com.lumio.app` build 1 onwards.
+- **No APK updater any more.** LUMIO ships as an installable web app; the native Android/iOS projects remain for a future store release.
 - Embedding model for Ollama is not pulled yet (needed for the retrieval
   phase). Passage embeddings are not generated yet; lesson selection uses
   concept links instead.

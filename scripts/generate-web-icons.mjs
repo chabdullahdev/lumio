@@ -23,3 +23,13 @@ for (const [name, size] of Object.entries(targets)) {
   await sharp(svg, { density: 384 }).resize(size, size).png().toFile(join(root, 'web', name));
   console.log(`wrote web/${name}`);
 }
+
+// The web app (installable PWA) ships its own copy, plus full-bleed "maskable" icons
+// (no rounded corners: Android crops them into whatever shape the phone uses).
+const maskable = Buffer.from(svg.toString().replace(/ rx="[\d.]+"/, ''));
+for (const size of [192, 512]) {
+  await sharp(svg, { density: 384 }).resize(size, size).png().toFile(join(root, 'webapp', 'public', `icon-${size}.png`));
+  await sharp(maskable, { density: 384 }).resize(size, size).png().toFile(join(root, 'webapp', 'public', `maskable-${size}.png`));
+  console.log(`wrote webapp/public icon-${size}.png and maskable-${size}.png`);
+}
+await sharp(svg, { density: 384 }).resize(180, 180).png().toFile(join(root, 'webapp', 'public', 'apple-touch-icon.png'));

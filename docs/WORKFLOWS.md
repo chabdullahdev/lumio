@@ -40,7 +40,6 @@ carry secrets or large generated files, so a second machine needs these once:
 | Not in git | What to do on the new machine |
 | --- | --- |
 | `.env`, `backend/.env` and `webapp/.env.local` (keys) | Copy them from the first machine (AirDrop, USB, password manager). Never email or commit them. |
-| Android signing key (`android/app/lumio-release.keystore`, `android/keystore.properties`) | Copy both. Only needed to publish app updates. |
 | Installed packages | `npm install`, `cd backend && npm install` and `cd webapp && npm install` |
 | The AI model | `ollama pull qwen3.5:9b` |
 | Your git name and email | `git config user.name "chabdullahdev"` and `git config user.email "238083306+chabdullahdev@users.noreply.github.com"` (inside the project) |
@@ -242,25 +241,13 @@ Run the librarian and the worker on only one computer at a time.
 
 ---
 
-## 6. Releasing an Android update
+## 6. Shipping an update (installable web app)
 
-1. In `android/app/build.gradle`, raise `versionCode` (and usually
-   `versionName`).
-2. Rebuild the release APK (reopen the project in Ship Studio).
-3. Make sure `android/keystore.properties` and
-   `android/app/lumio-release.keystore` are present — a debug-signed build can
-   never update a release-signed install.
-4. Publish:
-   ```bash
-   npm run release:publish
-   ```
-   It checks the package id (`com.lumio.app`), the version code, and the
-   signature; uploads `lumio-<versionCode>.apk` and `latest.json`; and refuses
-   to replace a newer build unless you add `--force`.
-5. Installed apps see the update card on next launch, download it, verify the
-   SHA-256, and the user confirms the install. The website's download button
-   updates automatically.
-6. Commit the version bump and push (workflow 8).
+1. Edit `webapp/` (or the shared `src/data`), then run the checks in 7b.
+2. `npm run web:build`, commit the changed `web/app/`, push to `master`.
+3. Vercel redeploys. People who installed LUMIO to their home screen get the new
+   version the next time they open it with a connection. Nothing to download.
+4. Changed the icon? `node scripts/generate-web-icons.mjs`.
 
 ---
 
@@ -360,7 +347,6 @@ sign-up links also return to `/app/`.
 | Google sign-in never returns | Add `lumio://auth/callback` to Supabase Redirect URLs. |
 | No new lessons appearing | Is the worker running? Is Ollama up? Check for dead jobs (workflow 4). |
 | Worker says Ollama unreachable | Start Ollama; confirm `OLLAMA_BASE_URL` is `127.0.0.1`. |
-| Android update won't install over old app | Signing key differs — rebuild with the release keystore. |
 | Everything else | `npm run typecheck && npm run lint && npm test`, and `cd backend && npm run check`. |
 
 ---

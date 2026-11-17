@@ -4,7 +4,7 @@ import { effectiveRoute } from './App';
 
 describe('router', () => {
   it('reads and writes the same addresses', () => {
-    for (const hash of ['#/', '#/home', '#/explore', '#/profile', '#/topics', '#/onboarding', '#/auth/signin', '#/auth/signup', '#/lesson/abc-123', '#/takeaways/x', '#/complete/y']) {
+    for (const hash of ['#/', '#/home', '#/explore', '#/profile', '#/notebook', '#/topics', '#/onboarding', '#/auth/signin', '#/auth/signup', '#/lesson/abc-123', '#/takeaways/x', '#/complete/y']) {
       expect(hashFor(parseHash(hash))).toBe(hash);
     }
   });

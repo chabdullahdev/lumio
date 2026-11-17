@@ -127,3 +127,20 @@ describe('reading progress', () => {
     expect(homeAfterOpen.next?.status).toBe('active');
   });
 });
+
+describe('notebook', () => {
+  test('is empty until a lesson is finished, then holds its takeaways once', async () => {
+    await sampleApi.completeOnboarding(THREE_TOPICS);
+    expect(await sampleApi.getNotebook()).toEqual([]);
+
+    const home = await sampleApi.getHome();
+    const id = home.next!.lesson.id;
+    await sampleApi.completeLesson(id);
+    await sampleApi.completeLesson(id); // finishing twice must not duplicate the entry
+
+    const notebook = await sampleApi.getNotebook();
+    expect(notebook).toHaveLength(1);
+    expect(notebook[0]?.lessonId).toBe(id);
+    expect(notebook[0]?.takeaways.length).toBeGreaterThanOrEqual(3);
+  });
+});

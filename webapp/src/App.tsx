@@ -6,11 +6,13 @@ import { Complete } from './screens/Complete';
 import { Explore } from './screens/Explore';
 import { Home } from './screens/Home';
 import { Lesson } from './screens/Lesson';
+import { Notebook } from './screens/Notebook';
 import { Onboarding } from './screens/Onboarding';
 import { Profile } from './screens/Profile';
 import { Takeaways } from './screens/Takeaways';
 import { Topics } from './screens/Topics';
 import { Welcome } from './screens/Welcome';
+import { OfflineBanner } from './pwa';
 import { ErrorView, Loading, Logo } from './ui';
 
 const SIGNED_OUT_ROUTES = new Set(['welcome', 'auth']);
@@ -47,6 +49,7 @@ function Shell() {
   const tabs: { route: Route; label: string; icon: string }[] = [
     { route: { name: 'home' }, label: 'Home', icon: '🏠' },
     { route: { name: 'explore' }, label: 'Explore', icon: '🧭' },
+    { route: { name: 'notebook' }, label: 'Notebook', icon: '📓' },
     { route: { name: 'profile' }, label: 'You', icon: '👤' },
   ];
   const showNav = status === 'ready' && !FOCUS_ROUTES.has(shown.name) && shown.name !== 'topics';
@@ -59,6 +62,7 @@ function Shell() {
     case 'onboarding': page = <Onboarding />; break;
     case 'home': page = <Home go={go} />; break;
     case 'explore': page = <Explore go={go} />; break;
+    case 'notebook': page = <Notebook go={go} />; break;
     case 'profile': page = <Profile go={go} />; break;
     case 'topics': page = <Topics go={go} />; break;
     case 'lesson': page = <Lesson key={shown.id} id={shown.id} go={go} />; break;
@@ -68,6 +72,7 @@ function Shell() {
 
   return (
     <>
+      <OfflineBanner />
       {showNav ? (
         <nav className="nav" aria-label="Main">
           <a className="nav-brand" href="#/home"><Logo size={26} /> <span>LUMIO</span></a>

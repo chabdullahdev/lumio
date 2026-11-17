@@ -11,6 +11,7 @@ export type Route =
   | { name: 'onboarding' }
   | { name: 'home' }
   | { name: 'explore' }
+  | { name: 'notebook' }
   | { name: 'profile' }
   | { name: 'topics' }
   | { name: 'lesson'; id: string }
@@ -29,6 +30,8 @@ export function parseHash(hash: string): Route {
       return { name: 'home' };
     case 'explore':
       return { name: 'explore' };
+    case 'notebook':
+      return { name: 'notebook' };
     case 'profile':
       return { name: 'profile' };
     case 'topics':

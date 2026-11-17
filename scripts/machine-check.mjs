@@ -70,9 +70,6 @@ hasValue(join(root, 'webapp', '.env.local'), 'VITE_SUPABASE_URL') && hasValue(jo
 hasValue(join(root, 'backend', '.env'), 'SUPABASE_SERVICE_ROLE_KEY')
   ? ok('backend/.env (worker)')
   : bad('backend/.env missing or empty', 'copy backend/.env from the other machine (it holds the secret key)');
-existsSync(join(root, 'android', 'app', 'lumio-release.keystore')) && existsSync(join(root, 'android', 'keystore.properties'))
-  ? ok('Android signing key')
-  : bad('Android signing key missing (only needed to publish app updates)', 'copy android/app/lumio-release.keystore and android/keystore.properties from the other machine');
 
 console.log('Local AI');
 const models = run('ollama', ['list']);
