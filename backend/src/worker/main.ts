@@ -18,6 +18,7 @@ import { hostname } from 'node:os';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { pathToFileURL } from 'node:url';
 import { loadBackendEnv, type BackendConfig } from '../env.ts';
+import { aiProvider, anthropicModelFor } from '../anthropic.ts';
 import { checkOllama } from '../ollama-health.ts';
 import { getSupabaseAdmin } from '../supabase-admin.ts';
 import { InsufficientMaterialError, generateLessonForUser } from '../lessons/generate.ts';
@@ -152,7 +153,8 @@ export async function runOnce(config: BackendConfig, workerId: string): Promise<
           admin,
           ollama: {
             baseUrl: config.ollamaBaseUrl,
-            model: config.ollamaModel,
+            // Stored on each lesson so you can tell which model wrote it.
+            model: aiProvider() === 'anthropic' ? anthropicModelFor(undefined) : config.ollamaModel,
             timeoutMs: config.ollamaTimeoutMs,
           },
           workerId,
@@ -209,8 +211,9 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => stop('SIGINT'));
   process.on('SIGTERM', () => stop('SIGTERM'));
 
-  log(`started as ${workerId} (model ${config.ollamaModel}, poll ${config.workerPollMs}ms)`);
-  log(`supabase ${config.supabaseUrl}, ollama ${config.ollamaBaseUrl}`);
+  const hosted = aiProvider() === 'anthropic';
+  log(`started as ${workerId} (model ${hosted ? anthropicModelFor(undefined) : config.ollamaModel}, poll ${config.workerPollMs}ms)`);
+  log(`supabase ${config.supabaseUrl}, ${hosted ? 'hosted AI' : `ollama ${config.ollamaBaseUrl}`}`);
 
   let waitingForOllama = false;
   do {
@@ -219,12 +222,12 @@ async function main(): Promise<void> {
     const health = await checkOllama(config.ollamaBaseUrl, config.ollamaModel);
     if (!health.ok) {
       if (!waitingForOllama) {
-        log(`waiting for the local AI: ${health.reason}`);
+        log(`waiting for the AI: ${health.reason}`);
         waitingForOllama = true;
       }
     } else {
       if (waitingForOllama) {
-        log('the local AI is ready again; resuming');
+        log('the AI is ready again; resuming');
         waitingForOllama = false;
       }
       try {

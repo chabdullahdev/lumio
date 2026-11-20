@@ -411,3 +411,20 @@ node --env-file-if-exists=.env scripts/ingest-library.ts --apply --only 1497,330
 notes and problem reports. Apply it to your Supabase project before using the new reader buttons;
 until then reading still works and notes simply do not save. Read reports with the service key:
 `select * from lesson_reports order by created_at desc;`
+
+
+## Running without a local AI (hosted AI)
+
+You do not need Ollama. Put an Anthropic API key in `backend/.env`:
+
+```
+ANTHROPIC_API_KEY=your-key-here
+```
+
+When the key is set, the worker, the librarian and the book chooser all use it automatically
+(lessons: `claude-sonnet-5-5`; small decisions: `claude-haiku-5-5`; change them with
+`ANTHROPIC_MODEL` / `ANTHROPIC_LIGHT_MODEL`). `npm run check` shows which AI is in use.
+Everything the AI writes is still validated exactly as before. Each lesson costs a few cents.
+
+The worker still has to be running somewhere to write lessons (`npm run worker`). It no longer needs
+Ollama, so it can run on any computer or small server.

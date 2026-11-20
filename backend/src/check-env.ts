@@ -6,6 +6,7 @@
  * length — and exits non-zero when the configuration is invalid.
  */
 import { loadBackendEnv } from './env.ts';
+import { aiProvider, anthropicModelFor } from './anthropic.ts';
 import { checkOllama } from './ollama-health.ts';
 
 async function main(): Promise<number> {
@@ -16,12 +17,19 @@ async function main(): Promise<number> {
     console.log(
       `  SUPABASE_SERVICE_ROLE_KEY set (${config.supabaseServiceRoleKey.length} characters)`,
     );
-    console.log(`  OLLAMA_BASE_URL          ${config.ollamaBaseUrl}`);
-    console.log(`  OLLAMA_MODEL             ${config.ollamaModel}`);
-    console.log(`  OLLAMA_TIMEOUT_MS        ${config.ollamaTimeoutMs}`);
+    const hosted = aiProvider() === 'anthropic';
+    console.log(`  AI                       ${hosted ? 'hosted (Anthropic)' : 'local (Ollama)'}`);
+    if (hosted) {
+      console.log(`  ANTHROPIC_MODEL          ${anthropicModelFor(undefined)} (lessons)`);
+      console.log(`  ANTHROPIC_LIGHT_MODEL    ${anthropicModelFor('light')} (topic and book choices)`);
+    } else {
+      console.log(`  OLLAMA_BASE_URL          ${config.ollamaBaseUrl}`);
+      console.log(`  OLLAMA_MODEL             ${config.ollamaModel}`);
+    }
+    console.log(`  AI_TIMEOUT_MS            ${config.ollamaTimeoutMs}`);
     console.log(`  WORKER_POLL_MS           ${config.workerPollMs}`);
     const health = await checkOllama(config.ollamaBaseUrl, config.ollamaModel);
-    console.log(`  Local AI                 ${health.ok ? 'ready' : `NOT READY - ${health.reason}`}`);
+    console.log(`  AI status                ${health.ok ? 'ready' : `NOT READY - ${health.reason}`}`);
     return health.ok ? 0 : 1;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

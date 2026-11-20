@@ -31,6 +31,7 @@ import {
   type LumioCategory,
 } from '../src/library/gutenberg-catalog.ts';
 import { buildSections, splitIntoPassages } from '../src/library/passages.ts';
+import { aiProvider } from '../src/anthropic.ts';
 import { chatJson } from '../src/ollama.ts';
 
 const CATALOG_URL = 'https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv';
@@ -137,9 +138,12 @@ async function installedModels(): Promise<string[]> {
 }
 
 async function curate(args: Args, grouped: Map<LumioCategory, CatalogEntry[]>): Promise<void> {
-  const models = await installedModels();
-  if (!models.includes(args.model)) {
-    throw new Error(`Model "${args.model}" is not installed. Installed: ${models.join(', ')}. Use --model <name>.`);
+  // With a hosted AI there is no local model list to check.
+  if (aiProvider() === 'ollama') {
+    const models = await installedModels();
+    if (!models.includes(args.model)) {
+      throw new Error(`Model "${args.model}" is not installed. Installed: ${models.join(', ')}. Use --model <name>.`);
+    }
   }
   const options = {
     baseUrl: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
@@ -147,6 +151,7 @@ async function curate(args: Args, grouped: Map<LumioCategory, CatalogEntry[]>): 
     timeoutMs: 600_000,
     numCtx: 8192,
     numPredict: 2048,
+    tier: 'light' as const,
   };
   const file = join(args.dir, 'curated.json');
   const existing: CuratedFile = JSON.parse((await readFile(file, 'utf8').catch(() => '{}')) || '{}');

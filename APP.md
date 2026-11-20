@@ -70,7 +70,7 @@ backend worker, never in the app.
 - **Native projects:** bare React Native in `src/`, `ios/`, `android/` (kept for a possible store release; no APK distribution).
 - **Backend workers:** Node.js + TypeScript in `backend/` — lesson generation, queue replenishment. Runs alongside the developer's machine; holds the service-role key.
 - **Data:** Supabase (PostgreSQL + Storage). Schema lives in `supabase/migrations/`.
-- **AI:** local Ollama models on the developer's machine, never exposed to the internet. The model only ever receives the extracts handed to it by the worker, and everything it returns is validated before storage.
+- **AI:** a hosted Claude model when `ANTHROPIC_API_KEY` is set in `backend/.env` (no local AI needed), otherwise local Ollama on the developer's machine, never exposed to the internet. The model only ever receives the extracts handed to it by the worker, and everything it returns is validated before storage.
 
 ## Getting started
 
