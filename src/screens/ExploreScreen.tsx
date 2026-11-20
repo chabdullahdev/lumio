@@ -92,7 +92,7 @@ export function ExploreScreen() {
           <Text style={styles.emptyTitle}>Nothing prepared right now</Text>
           <MutedText style={styles.emptyText}>
             LUMIO keeps up to three lessons ready. New ones appear here as they are
-            generated for your topics.
+            prepared for your topics.
           </MutedText>
         </Card>
       ) : (

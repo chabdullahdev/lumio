@@ -75,14 +75,13 @@ export function WelcomeScreen() {
               style={styles.footerButtonSmall}
             />
             <Text style={styles.footnote}>
-              Sample lessons are placeholders with real sources, shown while the lesson
-              generator is being connected.
+              Sample lessons are placeholders with real sources.
             </Text>
           </>
         ) : (
           <Text style={styles.footnote}>
-            Preview build: LUMIO is not connected to its backend yet, so it runs on a
-            sample library (clearly labelled inside).
+            Preview: you will see a small set of sample lessons, clearly labelled
+            inside.
           </Text>
         )}
       </View>

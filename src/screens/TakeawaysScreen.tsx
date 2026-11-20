@@ -126,7 +126,7 @@ export function TakeawaysScreen({ lessonId }: { lessonId: string }) {
 
       {lesson.isSample ? (
         <Text style={styles.sampleNote}>
-          Sample lesson — replaces real generated lessons until the pipeline is connected.
+          Sample lesson — a placeholder until your own lessons are ready.
         </Text>
       ) : null}
     </Screen>

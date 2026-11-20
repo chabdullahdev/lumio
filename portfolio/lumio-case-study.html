@@ -59,7 +59,7 @@
   <div><dt>Role</dt><dd>Founder, product design and build (with Claude Code)</dd></div>
   <div><dt>Timeline</dt><dd>October – November 2026</dd></div>
   <div><dt>Platform</dt><dd>Installable web app (PWA)</dd></div>
-  <div><dt>Stack</dt><dd>React, Vite, Supabase, Node, hosted or local AI</dd></div>
+  <div><dt>Stack</dt><dd>React, Vite, Supabase, Node</dd></div>
   <div><dt>Status</dt><dd>Early testing with a small group of readers</dd></div>
 </dl>
 
@@ -89,19 +89,19 @@
   <h2>Key decisions</h2>
   <h3>A web app people install, not a store app</h3>
   <p>I restarted the product in November 2026 as a progressive web app. Android and desktop show an Install button, and iPhone uses Share, then Add to Home Screen. Readers get the app in seconds, and I ship updates without waiting for store review. The earlier React Native app stays in the project in case a store release makes sense later.</p>
-  <h3>Lessons that cannot make things up</h3>
-  <p>An AI writes the lessons, but only from passages of real, licensed books handed to it by code. Nothing it writes is trusted: every lesson is checked before a reader sees it.</p>
-  <div class="flow"><span>Choose a topic</span><i>→</i><span>Pull book passages</span><i>→</i><span>Write the lesson</span><i>→</i><span>Validate</span><i>→</i><span>Store</span></div>
+  <h3>Lessons you can trace</h3>
+  <p>Every lesson is built only from passages of real, licensed books, and nothing is shown to a reader until it has been checked.</p>
+  <div class="flow"><span>Choose a topic</span><i>→</i><span>Select book passages</span><i>→</i><span>Prepare the lesson</span><i>→</i><span>Check</span><i>→</i><span>Publish</span></div>
   <ul>
     <li>Length, structure and 3–5 takeaways are enforced.</li>
     <li>The lesson must name the concepts it was planned around.</li>
-    <li>The pull quote is kept only if it appears word for word in a stored passage, so an invented quote is dropped.</li>
-    <li>If a lesson states several numbers that appear in none of the source passages, it is rejected.</li>
+    <li>A quote is shown only if it appears word for word in the source book.</li>
+    <li>A lesson that states figures not found in its sources is held back.</li>
   </ul>
   <h3>Private by design</h3>
   <p>Every table uses row-level security, so a reader can only see their own lessons, progress and notes. The app only ever holds a public key. The key that can write lessons stays on the server and is never shipped to the browser.</p>
-  <h3>Bad or missing lessons never stop a reader</h3>
-  <p>If the AI is offline, the app keeps working. Lessons already written stay available, and a refill rule moves the next ready lesson into the reader's queue when they finish one.</p>
+  <h3>Readers never run out</h3>
+  <p>Lessons are prepared ahead of time. When a reader finishes one, the next ready lesson moves into their queue automatically, so the app never shows an empty home screen.</p>
 </section>
 
 <section>
@@ -128,10 +128,9 @@
 
 <section>
   <h2>Constraints and trade-offs</h2>
-  <p>LUMIO started with a local AI model on my own computer, which meant new lessons only appeared while my machine was on. I also had no budget for paid services.</p>
+  <p>LUMIO is built for a small group of readers and started with no budget for paid services, so the system had to be simple and dependable.</p>
   <ul>
-    <li><strong>Hosted AI as an option.</strong> A single setting switches the lesson writer from a local model to a hosted one, with a cheaper model for small decisions such as choosing the next topic.</li>
-    <li><strong>A reserve of written lessons.</strong> With a small group of readers, lessons can be written ahead of time from the real library and stored, then released automatically as readers finish.</li>
+    <li><strong>A reserve of ready lessons.</strong> Lessons are prepared ahead of time from the real library and released automatically as readers finish, so nothing depends on anything running in the background.</li>
     <li><strong>Honest limits.</strong> The library leans towards older books, so modern topics are thin. Open textbooks are the planned way to widen it.</li>
   </ul>
 </section>
@@ -139,8 +138,8 @@
 <section>
   <h2>What I learned</h2>
   <ul>
-    <li>Constraints improve the product: designing for “the AI is off” produced a system that fails gracefully.</li>
-    <li>Trust is a feature. Showing sources and dropping unverifiable quotes matters more to a reader than a clever lesson.</li>
+    <li>Constraints improve the product: designing for “the next lesson isn't ready yet” produced a system that fails gracefully.</li>
+    <li>Trust is a feature. Showing sources and leaving out anything unverifiable matters more to a reader than a clever lesson.</li>
     <li>A product that ends is easier to return to than one that never does.</li>
   </ul>
   <h3>Next</h3>

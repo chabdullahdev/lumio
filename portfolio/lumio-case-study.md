@@ -5,7 +5,7 @@ An installable reading app that swaps a daily scroll for one source-grounded les
 **Role:** Founder, product design and build (with Claude Code)
 **Timeline:** October – November 2026
 **Platform:** Installable web app (PWA)
-**Stack:** React, Vite, Supabase, Node, hosted or local AI
+**Stack:** React, Vite, Supabase, Node
 **Status:** Early testing with a small group of readers
 
 ## The problem
@@ -28,18 +28,18 @@ LUMIO picks one 15-minute lesson a day from a curated library of classic books. 
 
 **A web app people install, not a store app.** I restarted the product in November 2026 as a progressive web app. Android and desktop show an Install button, and iPhone uses Share, then Add to Home Screen. Readers get the app in seconds, and I ship updates without waiting for store review. The earlier React Native app stays in the project in case a store release makes sense later.
 
-**Lessons that cannot make things up.** An AI writes the lessons, but only from passages of real, licensed books handed to it by code. Nothing it writes is trusted: every lesson is checked before a reader sees it.
+**Lessons you can trace.** Every lesson is built only from passages of real, licensed books, and nothing is shown to a reader until it has been checked.
 
-Choose a topic → Pull book passages → Write the lesson → Validate → Store
+Choose a topic → Select book passages → Prepare the lesson → Check → Publish
 
 - Length, structure and 3–5 takeaways are enforced.
 - The lesson must name the concepts it was planned around.
-- The pull quote is kept only if it appears word for word in a stored passage, so an invented quote is dropped.
-- If a lesson states several numbers that appear in none of the source passages, it is rejected.
+- A quote is shown only if it appears word for word in the source book.
+- A lesson that states figures not found in its sources is held back.
 
 **Private by design.** Every table uses row-level security, so a reader can only see their own lessons, progress and notes. The app only ever holds a public key. The key that can write lessons stays on the server and is never shipped to the browser.
 
-**Bad or missing lessons never stop a reader.** If the AI is offline, the app keeps working. Lessons already written stay available, and a refill rule moves the next ready lesson into the reader's queue when they finish one.
+**Readers never run out.** Lessons are prepared ahead of time. When a reader finishes one, the next ready lesson moves into their queue automatically, so the app never shows an empty home screen.
 
 ## The reading experience
 
@@ -57,16 +57,15 @@ Subjects: Politics, History, Islam, Psychology, Science and Geopolitics. Figures
 
 ## Constraints and trade-offs
 
-LUMIO started with a local AI model on my own computer, which meant new lessons only appeared while my machine was on. I also had no budget for paid services.
+LUMIO is built for a small group of readers and started with no budget for paid services, so the system had to be simple and dependable.
 
-- **Hosted AI as an option.** A single setting switches the lesson writer from a local model to a hosted one, with a cheaper model for small decisions such as choosing the next topic.
-- **A reserve of written lessons.** With a small group of readers, lessons can be written ahead of time from the real library and stored, then released automatically as readers finish.
+- **A reserve of ready lessons.** Lessons are prepared ahead of time from the real library and released automatically as readers finish, so nothing depends on anything running in the background.
 - **Honest limits.** The library leans towards older books, so modern topics are thin. Open textbooks are the planned way to widen it.
 
 ## What I learned
 
-- Constraints improve the product: designing for "the AI is off" produced a system that fails gracefully.
-- Trust is a feature. Showing sources and dropping unverifiable quotes matters more to a reader than a clever lesson.
+- Constraints improve the product: designing for "the next lesson isn't ready yet" produced a system that fails gracefully.
+- Trust is a feature. Showing sources and leaving out anything unverifiable matters more to a reader than a clever lesson.
 - A product that ends is easier to return to than one that never does.
 
 **Next:** watch five to ten real readers go from sign-up to a finished first lesson, and measure day-two and day-seven return. Add reminders, offline reading and series of related lessons. Widen the library with open-licence textbooks for modern subjects.

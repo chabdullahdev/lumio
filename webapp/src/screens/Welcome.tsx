@@ -39,7 +39,7 @@ export function Welcome({ go }: { go: (route: Route) => void }) {
       ) : (
         <div className="stack">
           <Button onClick={() => void startSample()}>Get started</Button>
-          <p className="muted small">Preview build: LUMIO is not connected to its backend yet, so it runs on a sample library (clearly labelled inside).</p>
+          <p className="muted small">Preview: you will see a small set of sample lessons, clearly labelled inside.</p>
         </div>
       )}
       <InstallCard />

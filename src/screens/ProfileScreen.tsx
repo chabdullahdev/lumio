@@ -208,8 +208,8 @@ export function ProfileScreen() {
           />
         ) : (
           <MutedText style={styles.timezone}>
-            Connect the Supabase backend to create a real account and generate real
-            lessons.
+            Sample mode: progress stays on this device. Create an account to get lessons of
+            your own.
           </MutedText>
         )}
       </Card>

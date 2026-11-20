@@ -99,7 +99,7 @@ export function Profile({ go }: { go: (route: Route) => void }) {
         ) : liveConfigured ? (
           <Button variant="secondary" onClick={() => void exitSampleMode()}>Exit sample mode</Button>
         ) : (
-          <Muted>Connect the Supabase backend to create a real account and generate real lessons.</Muted>
+          <Muted>Sample mode: progress stays in this browser. Create an account to get lessons of your own.</Muted>
         )}
       </Card>
       <p className="muted small center">Less scrolling. More understanding.</p>

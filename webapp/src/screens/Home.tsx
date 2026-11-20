@@ -62,13 +62,13 @@ export function Home({ go }: { go: (route: Route) => void }) {
         </Card>
       ) : home.sampleLibraryExhausted ? (
         <Card>
-          <Empty title="You finished the sample library" message="Every sample lesson is complete. Real lessons come from the generation pipeline — connect the backend and they will arrive in your queue." actionLabel="Review your topics" onAction={() => go({ name: 'topics' })} />
+          <Empty title="You finished the sample library" message="Every sample lesson is complete. Create an account to get lessons of your own." actionLabel="Review your topics" onAction={() => go({ name: 'topics' })} />
         </Card>
       ) : (
         <Card>
           <Empty
             title="Your next lessons are being prepared"
-            message={useSample ? 'Sample lessons will appear here shortly.' : 'LUMIO is generating lessons from your topics. This usually takes a couple of minutes.'}
+            message={useSample ? 'Sample lessons will appear here shortly.' : 'Your next lessons are being prepared from your topics. This usually takes a couple of minutes.'}
             actionLabel="Check again"
             onAction={reload}
           />
