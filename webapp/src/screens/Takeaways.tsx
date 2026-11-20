@@ -85,7 +85,7 @@ export function Takeaways({ id, go }: { id: string; go: (route: Route, replace?:
       <SectionTitle>Sources</SectionTitle>
       <Muted>Every lesson is grounded in the sources below. If a lesson ever seems to drift from them, tell us — accuracy comes before everything else.</Muted>
       {lesson.sources.map(source => <SourceRow key={source.id} source={source} />)}
-      {lesson.isSample ? <p className="muted small">Sample lesson — replaces real generated lessons until the pipeline is connected.</p> : null}
+      {lesson.isSample ? <p className="muted small">Sample lesson — a placeholder until your own lessons are ready.</p> : null}
       {finishError ? <p className="error" role="alert">{finishError}</p> : null}
       <div className="action-bar"><Button onClick={() => void finish()} loading={finishing}>Finish lesson</Button></div>
     </main>

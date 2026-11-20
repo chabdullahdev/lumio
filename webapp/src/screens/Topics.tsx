@@ -31,7 +31,7 @@ export function Topics({ go }: { go: (route: Route) => void }) {
     <main className="page">
       <button className="link-back" onClick={() => go({ name: 'explore' })}>‹ Back</button>
       <h1>Your topics</h1>
-      <Muted>{useSample ? 'Sample mode: the sample library has one lesson per topic.' : 'New lessons for added topics arrive as the generator prepares them.'}</Muted>
+      <Muted>{useSample ? 'Sample mode: the sample library has one lesson per topic.' : 'New lessons for added topics arrive as they are prepared.'}</Muted>
       <TopicGrid
         topics={data[0]}
         selectedIds={selected}

@@ -117,7 +117,7 @@ export function HomeScreen() {
         <Card style={styles.emptyCard}>
           <EmptyView
             title="You finished the sample library"
-            message="Every sample lesson is complete. Real lessons come from the generation pipeline — connect the backend and they will arrive in your queue."
+            message="Every sample lesson is complete. Create an account to get lessons of your own."
             actionLabel="Review your topics"
             onAction={() => navigation.push({ name: 'topics' })}
           />
@@ -129,7 +129,7 @@ export function HomeScreen() {
             message={
               useSample
                 ? 'Sample lessons will appear here shortly.'
-                : 'LUMIO is generating lessons from your topics. This usually takes a couple of minutes — pull down to check again.'
+                : 'Your next lessons are being prepared from your topics. This usually takes a couple of minutes — pull down to check again.'
             }
             actionLabel="Check again"
             onAction={() => refresh()}
@@ -174,9 +174,8 @@ export function HomeScreen() {
         <View style={styles.sampleNote}>
           <Pill label="Sample library" tone="warning" />
           <MutedText style={styles.sampleNoteText}>
-            These lessons are placeholders with real source references, shown while the
-            lesson generator is being connected. Progress made here is local to this
-            device.
+            These lessons are placeholders with real source references. Progress made
+            here is local to this device.
           </MutedText>
         </View>
       ) : null}

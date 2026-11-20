@@ -22,7 +22,7 @@ export function Explore({ go }: { go: (route: Route) => void }) {
       {items.length === 0 ? (
         <Card>
           <h3>Nothing prepared right now</h3>
-          <Muted>LUMIO keeps up to three lessons ready. New ones appear here as they are generated for your topics.</Muted>
+          <Muted>LUMIO keeps up to three lessons ready. New ones appear here as they are prepared for your topics.</Muted>
         </Card>
       ) : (
         <div className="list">

@@ -92,7 +92,7 @@ export function TopicsEditorScreen() {
       <MutedText style={styles.subtitle}>
         {useSample
           ? 'Sample mode: the sample library has one lesson per topic.'
-          : 'New lessons for added topics arrive as the generator prepares them.'}
+          : 'New lessons for added topics arrive as they are prepared.'}
       </MutedText>
       <TopicGrid topics={topics} selectedIds={selected} onToggle={toggle} />
     </Screen>

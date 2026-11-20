@@ -9,7 +9,7 @@
 - Platform: web app that installs from the browser to the home screen (iPhone, Android, Windows, Mac). No app store, no download file.
 - Price: free.
 - Accounts: sign up in the app with email or Google.
-- Sources: public-domain books (for example Darwin, Einstein, Thucydides, William James, Mill) and openly licensed articles. Lessons are drafted with AI from approved source passages and checked by software, so they can contain errors.
+- Sources: public-domain books (for example Darwin, Einstein, Thucydides, William James, Mill) and openly licensed articles. Lessons are prepared from approved source passages and checked before they appear, so they can contain errors.
 - Developer: Abdullah Shahzad (https://mabdullahshahzad.com).
 
 ## Pages
