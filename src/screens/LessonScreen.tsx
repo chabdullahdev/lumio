@@ -225,6 +225,16 @@ function Block({ block }: { block: LessonBlock }) {
       </View>
     );
   }
+  if (block.type === 'callout') {
+    const label =
+      block.kind === 'big_idea' ? 'The big idea' : block.kind === 'try_this' ? 'Try this today' : 'Think about it';
+    return (
+      <View style={styles.callout}>
+        <Text style={styles.calloutLabel}>{label}</Text>
+        <Text style={styles.calloutText}>{block.text}</Text>
+      </View>
+    );
+  }
   return <Text style={styles.paragraph}>{block.text}</Text>;
 }
 
@@ -321,6 +331,24 @@ function createStyles(theme: Theme) {
       marginTop: theme.spacing(2),
       fontSize: theme.type.tiny,
       color: theme.colors.textSecondary,
+    },
+    callout: {
+      marginBottom: theme.spacing(4),
+      padding: theme.spacing(4),
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.accent,
+    },
+    calloutLabel: {
+      fontSize: theme.type.tiny,
+      fontWeight: '700',
+      marginBottom: theme.spacing(1),
+      color: theme.colors.textSecondary,
+    },
+    calloutText: {
+      fontSize: 17,
+      lineHeight: 26,
+      color: theme.colors.textPrimary,
     },
     endSpacer: {
       height: theme.spacing(6),

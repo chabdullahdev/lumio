@@ -23,7 +23,7 @@ import { join } from 'node:path';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { loadBackendEnv } from '../src/env.ts';
 import { getSupabaseAdmin } from '../src/supabase-admin.ts';
-import { BOOKS, CONCEPTS, type CatalogBook } from '../src/library/catalog.ts';
+import { BOOKS, CONCEPTS, titleMatchesExpectation, type CatalogBook } from '../src/library/catalog.ts';
 import { parseEpub } from '../src/library/epub.ts';
 import {
   buildSections,
@@ -99,6 +99,13 @@ type PreparedBook = {
 async function prepareBook(book: CatalogBook, cache: string): Promise<PreparedBook> {
   const buffer = await fetchEpub(book, cache);
   const parsed = parseEpub(buffer);
+  if (!titleMatchesExpectation(book, parsed.metadata.title)) {
+    // A wrong Gutenberg number must never be stored under another book's title and licence.
+    throw new Error(
+      `#${book.gutenbergId} was expected to be "${book.title}" but the file is titled "${parsed.metadata.title}". ` +
+        `Check the Gutenberg number in catalog.ts; nothing was stored.`,
+    );
+  }
   const sections = buildSections(parsed.sections, book.include ? new RegExp(book.include, 'i') : undefined);
   const passages = sections.flatMap((section, index) => splitIntoPassages(index, section.paragraphs));
   if (passages.length < 10) {

@@ -5,6 +5,7 @@
  *
  * `evaluateTags` is pure and unit tested; `checkOllama` does the network call.
  */
+import { aiProvider, anthropicReadiness } from './anthropic.ts';
 
 export type OllamaHealth =
   | { ok: true; installed: string[] }
@@ -30,6 +31,11 @@ export function evaluateTags(data: unknown, model: string): OllamaHealth {
 
 /** Ask the running Ollama server which models it has. Never throws. */
 export async function checkOllama(baseUrl: string, model: string, timeoutMs = 5000): Promise<OllamaHealth> {
+  // With a hosted AI there is no local server to wait for; only the key matters.
+  if (aiProvider() === 'anthropic') {
+    const hosted = anthropicReadiness();
+    return hosted.ok ? { ok: true, installed: [] } : { ok: false, reason: hosted.reason, installed: [] };
+  }
   const url = `${baseUrl.replace(/\/+$/, '')}/api/tags`;
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });

@@ -7,7 +7,7 @@
  * and the lesson's central concept must be claimed — a lesson that silently
  * teaches nothing from its plan would corrupt progress tracking.
  */
-import type { GeneratedLesson, GeneratedLessonStats, LessonPlan } from './types.ts';
+import type { GeneratedLesson, GeneratedLessonStats, LessonExtras, LessonPlan } from './types.ts';
 import { TARGET_WORDS_MAX, TARGET_WORDS_MIN } from './prompt.ts';
 
 const MIN_WORDS = Math.floor(TARGET_WORDS_MIN * 0.6);
@@ -116,6 +116,64 @@ export function repairLessonShape(value: unknown): unknown {
   }
   repaired.blocks = blocks;
   return repaired;
+}
+
+/** Lower-case, straighten quotes/dashes and collapse spaces so quotes compare fairly. */
+function normalizeForQuote(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201a\u201b]/g, "'")
+    .replace(/[\u201c\u201d\u201e\u201f]/g, '"')
+    .replace(/[\u2010-\u2015]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const MAX_EXTRA_CHARS = 700;
+
+function cleanExtra(value: unknown, max = MAX_EXTRA_CHARS): string | null {
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  if (text.length < 8 || text.length > max) return null;
+  if (MARKDOWN_PATTERNS.some(([pattern]) => pattern.test(text))) return null;
+  return text;
+}
+
+/**
+ * The reader extras are optional: a missing, oversized or markdown-laden extra
+ * is dropped rather than failing the lesson. The pull quote is the exception
+ * to "write in your own words", so it is kept ONLY if it really appears word
+ * for word in one of the plan's passages; otherwise it is dropped.
+ */
+export function extractExtras(root: Row, plan: LessonPlan): LessonExtras {
+  let pullQuote: LessonExtras['pullQuote'] = null;
+  const rawQuote = typeof root.pull_quote === 'string' ? root.pull_quote.trim().replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, '') : '';
+  if (rawQuote.length >= 40 && rawQuote.length <= 250) {
+    const needle = normalizeForQuote(rawQuote);
+    const hit = plan.passages.find(passage => normalizeForQuote(passage.content).includes(needle));
+    if (hit) {
+      pullQuote = { text: rawQuote, source: hit.sourceTitle };
+    }
+  }
+  return {
+    bigIdea: cleanExtra(root.big_idea, 260),
+    pullQuote,
+    whyItMatters: cleanExtra(root.why_it_matters),
+    tryThis: cleanExtra(root.try_this, 400),
+    reflectionQuestion: cleanExtra(root.reflection_question, 300),
+  };
+}
+
+/** Numbers with 2+ digits in the lesson that no extract contains (possible invented facts). */
+export function findUngroundedNumbers(texts: string[], plan: LessonPlan): string[] {
+  const source = plan.passages.map(passage => passage.content).join(' ').replace(/(\d),(\d)/g, '$1$2');
+  const found = new Set<string>();
+  for (const text of texts) {
+    for (const match of text.replace(/(\d),(\d)/g, '$1$2').matchAll(/\b\d{2,}\b/g)) {
+      if (!source.includes(match[0])) found.add(match[0]);
+    }
+  }
+  return [...found];
 }
 
 export type ValidationResult =
@@ -241,13 +299,23 @@ export function validateGeneratedLesson(value: unknown, plan: LessonPlan): Valid
     }
   }
 
+  // --- reader extras (optional) and a cheap fact check ------------------------
+  const extras = extractExtras(root, plan);
+  const ungroundedNumbers = findUngroundedNumbers(
+    [...blocks.map(block => block.text), ...takeaways, ...[extras.whyItMatters, extras.tryThis].filter((t): t is string => Boolean(t))],
+    plan,
+  );
+  if (ungroundedNumbers.length >= 2) {
+    errors.push(`lesson states numbers that are not in the extracts: ${ungroundedNumbers.slice(0, 4).join(', ')}`);
+  }
+
   if (errors.length > 0) {
     return { ok: false, errors };
   }
 
   return {
     ok: true,
-    lesson: { title, summary, blocks, takeaways, conceptsCovered },
-    stats: { words, blocks: blocks.length, headings, paragraphs },
+    lesson: { extras, title, summary, blocks, takeaways, conceptsCovered },
+    stats: { words, blocks: blocks.length, headings, paragraphs, ungroundedNumbers },
   };
 }

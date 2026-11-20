@@ -4,6 +4,8 @@ import { useSession } from '../session';
 import { rememberSummary, type Route } from '../router';
 import { Button, Card, ErrorView, Loading, Muted, Pill, SectionTitle, useLoad } from '../ui';
 
+const NOTE_LIMIT = 4000;
+
 const USAGE_LABELS: Record<LessonSourceRef['usage'], string> = {
   direct_quote: 'Direct quote',
   paraphrase: 'Paraphrased from',
@@ -33,14 +35,21 @@ export function Takeaways({ id, go }: { id: string; go: (route: Route, replace?:
   const { data: lesson, error, reload } = useLoad(() => api.getLesson(id), [api, id]);
   const [finishing, setFinishing] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
+  const [answer, setAnswer] = useState<string | null>(null);
 
   if (error) return <main className="page reader"><ErrorView message={error} onRetry={reload} /></main>;
   if (!lesson) return <main className="page reader"><Loading message="Collecting takeaways…" /></main>;
+
+  const question = lesson.blocks.find(block => block.type === 'callout' && block.kind === 'reflection')?.text ?? null;
 
   const finish = async () => {
     setFinishing(true);
     setFinishError(null);
     try {
+      // The reflection is optional and must never stop a lesson from finishing.
+      if (answer !== null && answer.trim() !== lesson.reflection.trim()) {
+        await api.saveReflection(lesson.id, answer).catch(() => undefined);
+      }
       const summary = await api.completeLesson(lesson.id);
       rememberSummary(lesson.id, summary);
       go({ name: 'complete', id: lesson.id }, true);
@@ -61,6 +70,18 @@ export function Takeaways({ id, go }: { id: string; go: (route: Route, replace?:
           <li key={index}><span className="num">{index + 1}</span><span>{text}</span></li>
         ))}
       </ol>
+      {question ? (
+        <>
+          <SectionTitle>Your own note</SectionTitle>
+          <Card>
+            <p>{question}</p>
+            <label className="field">
+              <span className="sr-only">Your answer (optional)</span>
+              <textarea rows={4} maxLength={NOTE_LIMIT} placeholder="Optional — a sentence or two is plenty. It is saved to your notebook." value={answer ?? lesson.reflection} onChange={e => setAnswer(e.target.value)} />
+            </label>
+          </Card>
+        </>
+      ) : null}
       <SectionTitle>Sources</SectionTitle>
       <Muted>Every lesson is grounded in the sources below. If a lesson ever seems to drift from them, tell us — accuracy comes before everything else.</Muted>
       {lesson.sources.map(source => <SourceRow key={source.id} source={source} />)}

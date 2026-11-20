@@ -29,7 +29,7 @@ const plan: LessonPlan = {
 test('prompt embeds concepts, extracts, and the grounding rules', () => {
   const [system, user] = buildLessonPrompt(plan);
 
-  assert.equal(PROMPT_VERSION, 'lesson-writer-v2');
+  assert.equal(PROMPT_VERSION, 'lesson-writer-v3');
   assert.equal(system?.role, 'system');
   assert.match(system?.content ?? '', /Use ONLY the information in the provided extracts/);
   assert.match(system?.content ?? '', /never invent/i);
@@ -42,6 +42,11 @@ test('prompt embeds concepts, extracts, and the grounding rules', () => {
   assert.match(text, /EXTRACT 1 \(Photosynthesis\)/);
   assert.match(text, /Plants convert light into chemical energy\./);
   assert.match(text, /concepts_covered/);
+  // v3 reader extras
+  for (const field of ['big_idea', 'pull_quote', 'why_it_matters', 'try_this', 'reflection_question']) {
+    assert.match(system?.content ?? '', new RegExp(field));
+  }
+  assert.match(system?.content ?? '', /ONLY exception is the pull_quote/);
   // Regression guard: the structure line must state an explicit paragraph
   // count, or the model returns 3-4 long paragraphs and validation fails.
   assert.match(text, /8 to 14 paragraphs in total/);

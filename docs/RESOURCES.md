@@ -61,7 +61,9 @@ All `.env` files are gitignored; only `.env.example` templates are committed.
 | --- | --- | --- |
 | `SUPABASE_URL` | — | Same project URL. |
 | `SUPABASE_SERVICE_ROLE_KEY` | — | Server-side key. |
-| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Local AI server. Must stay on loopback. |
+| `ANTHROPIC_API_KEY` | — | Hosted AI key. When set, it is used instead of Ollama. Server-side only. |
+| `ANTHROPIC_MODEL` / `ANTHROPIC_LIGHT_MODEL` | `claude-sonnet-5-5` / `claude-haiku-5-5` | Lesson writer / small decisions (hosted AI). |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Local AI server (only without an API key). Must stay on loopback. |
 | `OLLAMA_MODEL` | `qwen3.5:9b` | Model used to write lessons. |
 | `OLLAMA_TIMEOUT_MS` | `600000` | Abort one generation after this long. |
 | `WORKER_POLL_MS` | `15000` | Idle wait between polls. |

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOOKS, CATEGORY_NAMES, CONCEPTS } from '../src/library/catalog.ts';
+import { BOOKS, CATEGORY_NAMES, CONCEPTS, titleMatchesExpectation } from '../src/library/catalog.ts';
 import { decodeEntities, htmlToSections, stripBoilerplate } from '../src/library/epub.ts';
 import {
   buildSections,
@@ -119,15 +119,29 @@ test('scorePassages ranks keyword-rich passages and honours the chapter bonus', 
   assert.ok(top[0]!.score > top[1]!.score);
 });
 
-test('catalog: 10 new concepts per category, unique names, all books known and licensed sources only', () => {
+test('titleMatchesExpectation only accepts the book the catalog expects', () => {
+  const book = BOOKS.find(entry => entry.gutenbergId === 3300)!;
+  assert.equal(titleMatchesExpectation(book, 'An Inquiry into the Nature and Causes of the Wealth of Nations'), true);
+  assert.equal(titleMatchesExpectation(book, 'Pride and Prejudice'), false);
+  // Books without an expectation are not checked (the original reading list).
+  assert.equal(titleMatchesExpectation(BOOKS.find(entry => entry.gutenbergId === 3207)!, 'anything'), true);
+});
+
+test('every book added in the library expansion has a title safety check', () => {
+  for (const id of [1497, 3300, 61, 147, 621, 408]) {
+    assert.ok(BOOKS.find(book => book.gutenbergId === id)?.expectInTitle, `#${id}`);
+  }
+});
+
+test('catalog: at least 10 concepts per category, unique names, all books known and licensed sources only', () => {
   const bookIds = new Set(BOOKS.map(book => book.gutenbergId));
   assert.equal(bookIds.size, BOOKS.length, 'duplicate book ids');
   const names = new Set(CONCEPTS.map(concept => concept.name.toLowerCase()));
   assert.equal(names.size, CONCEPTS.length, 'duplicate concept names');
   for (const category of CATEGORY_NAMES) {
-    assert.equal(CONCEPTS.filter(concept => concept.category === category).length, 10, category);
+    assert.ok(CONCEPTS.filter(concept => concept.category === category).length >= 10, category);
   }
-  assert.equal(CONCEPTS.length, 60);
+  assert.equal(CONCEPTS.length, 68);
   for (const concept of CONCEPTS) {
     assert.ok(concept.books.length > 0 && concept.books.every(id => bookIds.has(id)), concept.name);
     assert.ok(concept.keywords.length > 0, concept.name);

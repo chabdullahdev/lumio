@@ -20,7 +20,22 @@ export type CatalogBook = {
   publishedYear: number;
   /** Optional: keep only chapters whose title matches (omnibus books). */
   include?: string;
+  /**
+   * Safety check for books added without being able to open them first: a
+   * regex (case-insensitive) that the downloaded file's own title must match.
+   * If a Gutenberg number is wrong, ingestion stops instead of storing the
+   * wrong book under this entry's title and licence.
+   */
+  expectInTitle?: string;
 };
+
+/** True when a downloaded book's own title matches the catalog's expectation. */
+export function titleMatchesExpectation(book: CatalogBook, downloadedTitle: string): boolean {
+  if (!book.expectInTitle) {
+    return true;
+  }
+  return new RegExp(book.expectInTitle, 'i').test(downloadedTitle);
+}
 
 export type CatalogConcept = {
   category: string;
@@ -42,8 +57,13 @@ export const BOOKS: CatalogBook[] = [
   { gutenbergId: 7370, title: 'Second Treatise of Government', authors: ['John Locke'], edition: null, publishedYear: 1689 },
   { gutenbergId: 34901, title: 'On Liberty', authors: ['John Stuart Mill'], edition: null, publishedYear: 1859 },
   { gutenbergId: 1404, title: 'The Federalist Papers', authors: ['Alexander Hamilton', 'James Madison', 'John Jay'], edition: null, publishedYear: 1788 },
+  { gutenbergId: 1497, title: 'The Republic', authors: ['Plato'], edition: 'Translated by Benjamin Jowett', publishedYear: 1888, expectInTitle: 'republic' },
+  { gutenbergId: 3300, title: 'An Inquiry into the Nature and Causes of the Wealth of Nations', authors: ['Adam Smith'], edition: null, publishedYear: 1776, expectInTitle: 'wealth of nations' },
+  { gutenbergId: 61, title: 'The Communist Manifesto', authors: ['Karl Marx', 'Friedrich Engels'], edition: null, publishedYear: 1848, expectInTitle: 'communist manifesto' },
+  { gutenbergId: 147, title: 'Common Sense', authors: ['Thomas Paine'], edition: null, publishedYear: 1776, expectInTitle: 'common sense' },
   { gutenbergId: 815, title: 'Democracy in America, Volume 1', authors: ['Alexis de Tocqueville'], edition: 'Translated by Henry Reeve', publishedYear: 1835 },
   // Psychology
+  { gutenbergId: 621, title: 'The Varieties of Religious Experience: A Study in Human Nature', authors: ['William James'], edition: null, publishedYear: 1902, expectInTitle: 'varieties of religious experience' },
   { gutenbergId: 57628, title: 'The Principles of Psychology, Volume 1', authors: ['William James'], edition: null, publishedYear: 1890 },
   { gutenbergId: 57634, title: 'The Principles of Psychology, Volume 2', authors: ['William James'], edition: null, publishedYear: 1890 },
   { gutenbergId: 16287, title: "Talks to Teachers on Psychology; and to Students on Some of Life's Ideals", authors: ['William James'], edition: null, publishedYear: 1899 },
@@ -66,6 +86,7 @@ export const BOOKS: CatalogBook[] = [
   { gutenbergId: 731, title: 'History of the Decline and Fall of the Roman Empire, Volume 1', authors: ['Edward Gibbon'], edition: 'Ed. J. B. Bury', publishedYear: 1776 },
   { gutenbergId: 10636, title: 'The Travels of Marco Polo, Volume 1', authors: ['Marco Polo'], edition: 'Translated by Henry Yule', publishedYear: 1871 },
   { gutenbergId: 674, title: 'Plutarch: Lives of the Noble Grecians and Romans (Alexander)', authors: ['Plutarch'], edition: 'Translated by John Dryden, ed. A. H. Clough', publishedYear: 1859, include: '^(alexander|alexander the great)\\b' },
+  { gutenbergId: 408, title: 'The Souls of Black Folk', authors: ['W. E. B. Du Bois'], edition: null, publishedYear: 1903, expectInTitle: 'souls of black folk' },
   // Islam
   { gutenbergId: 2800, title: 'The Koran (Al-Qur\'an)', authors: ['J. M. Rodwell (translator)'], edition: 'Translated by J. M. Rodwell', publishedYear: 1861 },
   { gutenbergId: 14064, title: 'Mohammed, the Prophet of Islam', authors: ['Herbert E. E. Hayes'], edition: null, publishedYear: 1905 },
@@ -515,6 +536,63 @@ export const CONCEPTS: CatalogConcept[] = [
     description: 'How mountains, rivers and deserts have made some borders stable and others a source of conflict.',
     difficulty: 3, relevance: 4, books: [15293],
     keywords: [kw('boundar', 2), kw('frontier', 2), kw('mountain', 1), kw('rivers?\\b', 1), kw('border', 1), kw('desert', 1)],
+  },
+  // ---- Added in the November 2026 library expansion -------------------------
+  {
+    category: 'Politics',
+    name: 'The allegory of the cave',
+    description: 'Plato’s image of prisoners who mistake shadows for reality, and the hard climb toward understanding.',
+    difficulty: 2, relevance: 5, books: [1497],
+    keywords: [kw('\\bcave\\b|\\bden\\b', 3), kw('shadows?', 2), kw('prisoners?', 2), kw('the sun', 1.5), kw('chains|fetters', 1.5), kw('puppets?', 2)],
+  },
+  {
+    category: 'Politics',
+    name: 'Justice and the ideal city',
+    description: 'Plato’s search for what justice is by imagining a city where each part does its own work, ruled by those who love wisdom.',
+    difficulty: 3, relevance: 4, books: [1497],
+    keywords: [kw('justice', 1.5), kw('guardians?', 2), kw('philosopher', 2), kw('his own business|own work', 3), kw('the state|city', 0.5), kw('tripartite|three classes', 2)],
+  },
+  {
+    category: 'Politics',
+    name: 'The division of labour',
+    description: 'Adam Smith’s observation that dividing work into small tasks multiplies what a group of people can make.',
+    difficulty: 2, relevance: 5, books: [3300],
+    keywords: [kw('division of labou?r', 4), kw('pin[- ]makers?|pin manufactory|pins\\b', 3), kw('dexterity', 2), kw('productive powers', 2), kw('workmen', 1)],
+  },
+  {
+    category: 'Politics',
+    name: 'Self-interest and the invisible hand',
+    description: 'Why Smith thought markets turn each person’s pursuit of their own gain into something useful for everyone.',
+    difficulty: 3, relevance: 5, books: [3300],
+    keywords: [kw('invisible hand', 5), kw('self-?love|self-?interest', 3), kw('butcher', 3), kw('benevolence', 2), kw('public interest|publick interest', 2)],
+  },
+  {
+    category: 'Politics',
+    name: 'Class struggle',
+    description: 'Marx and Engels’ claim that history is the story of conflict between classes, and what they expected from it.',
+    difficulty: 3, relevance: 4, books: [61],
+    keywords: [kw('class struggles?|class antagonisms?|class war', 4), kw('bourgeois', 1.5), kw('proletari', 1.5), kw('oppressor', 2), kw('means of production', 2)],
+  },
+  {
+    category: 'Politics',
+    name: 'Government as a necessary evil',
+    description: 'Paine’s plain-spoken case that society is a blessing and government only a tool, to be judged by how well it protects people.',
+    difficulty: 2, relevance: 5, books: [147],
+    keywords: [kw('necessary evil', 5), kw('society (is|in) every state|society and government', 3), kw('security', 1), kw('representation', 1), kw('monarchy|hereditary', 1)],
+  },
+  {
+    category: 'Psychology',
+    name: 'The divided self and conversion',
+    description: 'James’s study of people who feel torn in two, and the sudden or gradual changes that make them whole.',
+    difficulty: 3, relevance: 4, books: [621],
+    keywords: [kw('divided self|divided', 3), kw('conversion|converted', 2), kw('twice-?born', 4), kw('once-?born', 3), kw('healthy-?mindedness|healthy-?minded', 3), kw('sick soul', 3)],
+  },
+  {
+    category: 'History',
+    name: 'The color line and double consciousness',
+    description: 'Du Bois’s account of life behind the veil of race in America, and of seeing oneself through the eyes of others.',
+    difficulty: 3, relevance: 5, books: [408],
+    keywords: [kw('double-?consciousness', 5), kw('color-?line', 4), kw('the veil', 3), kw('freedmen|freedman', 1.5), kw('emancipation', 1), kw('twoness', 3)],
   },
 ];
 

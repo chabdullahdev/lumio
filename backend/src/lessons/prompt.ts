@@ -16,8 +16,11 @@ import type { OllamaMessage } from '../ollama.ts';
  * v2: the structure line now states an explicit paragraph count. Under v1 the
  * model read "one or more paragraphs" per section literally and returned three
  * or four paragraphs, which the validator (6-30 paragraphs) always rejected.
+ * v3: adds the optional reader extras (big idea, pull quote copied word for word
+ * from an extract, why it matters, a small thing to try, one reflection
+ * question). They are optional so a small model that skips one still passes.
  */
-export const PROMPT_VERSION = 'lesson-writer-v2';
+export const PROMPT_VERSION = 'lesson-writer-v3';
 
 export const TARGET_WORDS_MIN = 800;
 export const TARGET_WORDS_MAX = 1050;
@@ -31,7 +34,7 @@ const SYSTEM_PROMPT = [
   'Hard rules:',
   '- Use ONLY the information in the provided extracts. Never add outside facts, numbers, dates or names.',
   '- Never invent quotations and never include citations, links, or footnote markers in the prose.',
-  '- Write in your own words (paraphrase). Do not copy sentences from the extracts verbatim.',
+  '- Write in your own words (paraphrase). Do not copy sentences from the extracts verbatim. The ONLY exception is the pull_quote field, which must be copied exactly from one extract.',
   '- Plain, warm, precise English. No hype, no filler, no questions to the reader.',
   '- No markdown formatting, no bullet lists, no bold or italics. Headings are plain short lines.',
   '- If the extracts disagree or leave gaps, simply leave those details out.',
@@ -44,6 +47,11 @@ const SYSTEM_PROMPT = [
   '    { "type": "heading", "text": "section heading" },',
   '    { "type": "paragraph", "text": "40-160 words of lesson prose" }',
   '  ],',
+  '  "big_idea": "one sentence, at most 200 characters, starting with \'In this lesson you will learn\'",',
+  '  "pull_quote": "one short sentence (40-250 characters) copied WORD FOR WORD from one extract, or an empty string",',
+  '  "why_it_matters": "40-90 words on why this idea still matters in everyday life, using only the extracts",',
+  '  "try_this": "one small, concrete thing the reader can try today, one or two sentences",',
+  '  "reflection_question": "one open question (not a quiz) that helps the reader apply the idea to their own life",',
   '  "takeaways": ["3 to 5 short takeaways, one sentence each"],',
   '  "concepts_covered": ["names of the taught concepts, copied exactly from the provided concept list"]',
   '}',
@@ -66,6 +74,7 @@ export function buildLessonPrompt(plan: LessonPlan): OllamaMessage[] {
     `Length: between ${TARGET_WORDS_MIN} and ${TARGET_WORDS_MAX} words across the paragraphs (not counting takeaways).`,
     `Structure: 3 to 4 sections; each section starts with one heading and continues with two to four paragraphs, 8 to 14 paragraphs in total.`,
     `Paragraphs: each paragraph is 40 to 160 words and covers one connected idea; never merge the whole lesson into a few long paragraphs on a single topic, and never return fewer than 8 paragraphs.`,
+    `Extras: big_idea, why_it_matters, try_this and reflection_question are written in your own words; pull_quote is the only text you may copy exactly, and only from an extract. Leave pull_quote as an empty string if no sentence fits.`,
     `Takeaways: ${TARGET_TAKEAWAYS_MIN} to ${TARGET_TAKEAWAYS_MAX}, each a single clear sentence.`,
     `concepts_covered: must include the central concept, using the exact names listed above.`,
     '',

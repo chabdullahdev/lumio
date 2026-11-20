@@ -21,6 +21,7 @@ import { chatJson, type OllamaOptions } from '../ollama.ts';
 import { chooseLessonPlan, loadCandidateData } from './candidates.ts';
 import { askPlanner } from './planner.ts';
 import { PROMPT_VERSION, buildLessonPrompt } from './prompt.ts';
+import { assembleContent } from './content.ts';
 import { extractJsonObject, validateGeneratedLesson } from './validate.ts';
 import type { GeneratedLesson, GeneratedLessonStats, LessonPlan } from './types.ts';
 
@@ -206,7 +207,7 @@ export async function generateLessonForUser(
       primary_category_id: plan.categoryId,
       title: lesson.title,
       summary: lesson.summary,
-      content: lesson.blocks,
+      content: assembleContent(lesson),
       estimated_minutes: estimateMinutes(stats.words),
       status: 'generating',
       generation_model: context.ollama.model,
@@ -215,6 +216,14 @@ export async function generateLessonForUser(
         words: stats.words,
         paragraphs: stats.paragraphs,
         headings: stats.headings,
+        extras: {
+          big_idea: Boolean(lesson.extras.bigIdea),
+          pull_quote: Boolean(lesson.extras.pullQuote),
+          why_it_matters: Boolean(lesson.extras.whyItMatters),
+          try_this: Boolean(lesson.extras.tryThis),
+          reflection_question: Boolean(lesson.extras.reflectionQuestion),
+        },
+        ungrounded_numbers: stats.ungroundedNumbers ?? [],
         source_words: plan.sourceWords,
         passage_ids: plan.passages.map(passage => passage.id),
         concepts_covered: lesson.conceptsCovered,

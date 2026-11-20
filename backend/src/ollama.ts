@@ -15,6 +15,7 @@
  * timeouts; the AbortSignal below is the single, configurable overall budget.
  */
 import { Agent } from 'undici';
+import { aiProvider, chatAnthropic } from './anthropic.ts';
 
 export type OllamaOptions = {
   baseUrl: string;
@@ -23,6 +24,8 @@ export type OllamaOptions = {
   temperature?: number;
   numCtx?: number;
   numPredict?: number;
+  /** 'light' = a small decision (topic choice, book choice) that a cheaper hosted model can make. */
+  tier?: 'light';
 };
 
 export type OllamaMessage = { role: 'system' | 'user'; content: string };
@@ -64,6 +67,10 @@ export async function chatJson(
   options: OllamaOptions,
   messages: OllamaMessage[],
 ): Promise<string> {
+  // A hosted AI is used when ANTHROPIC_API_KEY is set; otherwise local Ollama.
+  if (aiProvider() === 'anthropic') {
+    return chatAnthropic(options, messages);
+  }
   const url = `${options.baseUrl.replace(/\/+$/, '')}/api/chat`;
 
   let response: Response;

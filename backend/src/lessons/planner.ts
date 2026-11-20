@@ -94,7 +94,7 @@ export async function askPlanner(
   }
   try {
     const raw = await chatJson(
-      { ...ollama, timeoutMs: Math.min(ollama.timeoutMs, PLANNER_TIMEOUT_MS), numPredict: 200, temperature: 0.4 },
+      { ...ollama, timeoutMs: Math.min(ollama.timeoutMs, PLANNER_TIMEOUT_MS), numPredict: 200, temperature: 0.4, tier: 'light' },
       buildPlannerPrompt(data, options),
     );
     const choice = parsePlannerReply(raw, options);
