@@ -428,3 +428,13 @@ Everything the AI writes is still validated exactly as before. Each lesson costs
 
 The worker still has to be running somewhere to write lessons (`npm run worker`). It no longer needs
 Ollama, so it can run on any computer or small server.
+
+
+## Lessons written ahead of time (no AI needed)
+
+Lessons can be written by hand (or by an AI assistant) from the passages already in the library and stored as
+`ready` lessons with no queue row: a reserve. Migration 18 adds `promote_reserve_lessons(user_id)` and a trigger on
+`lesson_queue`: whenever a reader finishes, skips or replaces a queued lesson, their oldest unqueued, unfinished ready
+lesson moves into the free slot (never more than three, never the same lesson twice). Each hand-written lesson uses the
+same format as generated ones and must pass `validateGeneratedLesson` before it is stored; the quote in it is copied
+word for word from a stored passage. `store-authored-lessons.ts` stores a prepared bundle with the service key.
