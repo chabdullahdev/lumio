@@ -399,8 +399,8 @@ The Communist Manifesto, Common Sense, The Varieties of Religious Experience, Th
 Black Folk) with eight new concepts. They are only in the catalog until you run, from `backend/`:
 
 ```bash
-npm run ingest -- --only 1497,3300,61,147,621,408          # dry run, shows passage counts
-npm run ingest -- --apply --only 1497,3300,61,147,621,408  # save to Supabase
+node scripts/ingest-library.ts --show --only 1497,3300,61,147,621,408      # dry run, shows passages
+node --env-file-if-exists=.env scripts/ingest-library.ts --apply --only 1497,3300,61,147,621,408
 ```
 
 (The development sandbox cannot reach gutenberg.org, so these were not downloaded there.)
