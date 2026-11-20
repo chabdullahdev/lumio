@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LUMIO case study</title>
+<meta name="description" content="LUMIO is an installable reading app that swaps a daily scroll for one source-grounded lesson and a notebook the reader keeps.">
+<style>
+  :root { --bg:#ffffff; --surface:#f5f8f6; --text:#11181c; --text-2:#5b6470; --accent:#54e36e; --accent-soft:rgba(84,227,110,.16); --accent-text:#0b2912; --border:#e2e8e4; --radius:18px; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1116; --surface:#161b22; --text:#f2f4f7; --text-2:#9aa4b2; --accent-soft:rgba(84,227,110,.13); --border:#232a33; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:17px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+  header.hero { padding: 56px 0 32px; }
+  .eyebrow { color: var(--text-2); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; margin: 0 0 12px; }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: -.03em; margin: 0 0 16px; }
+  h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--accent-soft) 62%); }
+  .lead { font-size: 1.25rem; color: var(--text-2); max-width: 720px; margin: 0; }
+  .cover { width: 100%; border-radius: var(--radius); border: 1px solid var(--border); display: block; margin: 32px 0 0; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px; padding: 28px 0; border-bottom: 1px solid var(--border); }
+  .meta dt { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); font-weight: 700; }
+  .meta dd { margin: 4px 0 0; font-weight: 600; }
+  section { padding: 44px 0 0; }
+  h2 { font-size: clamp(1.5rem, 3.6vw, 2rem); letter-spacing: -.02em; margin: 0 0 14px; }
+  h3 { font-size: 1.1rem; margin: 22px 0 6px; }
+  p { margin: 0 0 14px; max-width: 720px; }
+  ul, ol { max-width: 720px; padding-left: 1.2em; margin: 0 0 14px; }
+  li { margin: 6px 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 24px 0 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .stat strong { display:block; font-size: 2rem; letter-spacing: -.02em; }
+  .stat span { color: var(--text-2); font-size: .9rem; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin: 20px 0 8px; }
+  figure { margin: 0; }
+  figure img { width: 100%; border-radius: 22px; border: 1px solid var(--border); display: block; }
+  figcaption { color: var(--text-2); font-size: .9rem; margin-top: 8px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 18px 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .card h3 { margin-top: 0; }
+  .card p { margin: 0; color: var(--text-2); }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+  .flow span { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: .95rem; }
+  .flow i { color: var(--text-2); font-style: normal; }
+  .note { border-left: 4px solid var(--accent); padding: 4px 0 4px 16px; color: var(--text-2); max-width: 720px; }
+  footer { padding: 56px 0 72px; color: var(--text-2); font-size: .9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Case study · Product design &amp; build</p>
+  <h1>LUMIO: <em>less scrolling,</em> more understanding.</h1>
+  <p class="lead">An installable reading app that swaps a daily scroll for one source-grounded lesson from classic books, and saves every takeaway to a notebook the reader keeps.</p>
+  <img class="cover" src="lumio-thumbnail.png" alt="LUMIO on two phones: the home screen with today's lesson and the lesson reader">
+</header>
+
+<dl class="meta">
+  <div><dt>Role</dt><dd>Founder, product design and build (with Claude Code)</dd></div>
+  <div><dt>Timeline</dt><dd>October – November 2026</dd></div>
+  <div><dt>Platform</dt><dd>Installable web app (PWA)</dd></div>
+  <div><dt>Stack</dt><dd>React, Vite, Supabase, Node, hosted or local AI</dd></div>
+  <div><dt>Status</dt><dd>Early testing with a small group of readers</dd></div>
+</dl>
+
+<section>
+  <h2>The problem</h2>
+  <p>Most people want to learn regularly but give their spare minutes to feeds. Learning apps ask them to pick a course, build a plan and take quizzes, and they leave the first time they miss a day. Reading something good also leaves nothing behind: a week later the ideas are gone.</p>
+  <p>I wanted the opposite of a feed: one short, calm session a day that ends, and leaves the reader holding something.</p>
+</section>
+
+<section>
+  <h2>The idea</h2>
+  <p>LUMIO picks one 15-minute lesson a day from a curated library of classic books. Each lesson ends with three to five takeaways, and every takeaway is saved to a searchable notebook. There is nothing to choose, no quiz, and a streak that never nags.</p>
+  <div class="cards">
+    <div class="card"><h3>One lesson a day</h3><p>Three upcoming lessons are always prepared, so the home screen has one clear next step.</p></div>
+    <div class="card"><h3>A notebook you keep</h3><p>Takeaways and your own notes are saved automatically and searchable, so reading adds up.</p></div>
+    <div class="card"><h3>Traceable sources</h3><p>Every lesson lists the book passages it was built from, with licence information.</p></div>
+  </div>
+  <div class="shots">
+    <figure><img src="screens/home-dark.png" alt="Home screen with today's lesson and a memory card"><figcaption>Home: one next lesson, plus a daily “Do you still remember?” card.</figcaption></figure>
+    <figure><img src="screens/lesson-dark.png" alt="Lesson reader with the big idea and a quote"><figcaption>Reader: big idea first, real quotes, short version, listen and text size.</figcaption></figure>
+    <figure><img src="screens/notebook-dark.png" alt="Notebook with takeaways and a personal note"><figcaption>Notebook: every takeaway and your own notes, searchable.</figcaption></figure>
+  </div>
+  <p class="note">Screens are rendered from the app's own stylesheet with example reader data (name, streak and note).</p>
+</section>
+
+<section>
+  <h2>Key decisions</h2>
+  <h3>A web app people install, not a store app</h3>
+  <p>I restarted the product in November 2026 as a progressive web app. Android and desktop show an Install button, and iPhone uses Share, then Add to Home Screen. Readers get the app in seconds, and I ship updates without waiting for store review. The earlier React Native app stays in the project in case a store release makes sense later.</p>
+  <h3>Lessons that cannot make things up</h3>
+  <p>An AI writes the lessons, but only from passages of real, licensed books handed to it by code. Nothing it writes is trusted: every lesson is checked before a reader sees it.</p>
+  <div class="flow"><span>Choose a topic</span><i>→</i><span>Pull book passages</span><i>→</i><span>Write the lesson</span><i>→</i><span>Validate</span><i>→</i><span>Store</span></div>
+  <ul>
+    <li>Length, structure and 3–5 takeaways are enforced.</li>
+    <li>The lesson must name the concepts it was planned around.</li>
+    <li>The pull quote is kept only if it appears word for word in a stored passage, so an invented quote is dropped.</li>
+    <li>If a lesson states several numbers that appear in none of the source passages, it is rejected.</li>
+  </ul>
+  <h3>Private by design</h3>
+  <p>Every table uses row-level security, so a reader can only see their own lessons, progress and notes. The app only ever holds a public key. The key that can write lessons stays on the server and is never shipped to the browser.</p>
+  <h3>Bad or missing lessons never stop a reader</h3>
+  <p>If the AI is offline, the app keeps working. Lessons already written stay available, and a refill rule moves the next ready lesson into the reader's queue when they finish one.</p>
+</section>
+
+<section>
+  <h2>The reading experience</h2>
+  <ul>
+    <li><strong>Big idea first.</strong> One sentence says what you will learn, so you know what you are getting.</li>
+    <li><strong>A real line from the book.</strong> A short quote, clearly attributed, makes it feel like reading the book.</li>
+    <li><strong>Why it matters, try this, think about it.</strong> The lesson ends by connecting the idea to daily life, with one small action and one open question.</li>
+    <li><strong>Choose how you read.</strong> A short version for busy days, a listen mode that reads the lesson aloud, and three text sizes.</li>
+    <li><strong>Report a problem.</strong> One tap to flag something that looks wrong, so accuracy stays ahead of everything else.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>The library, in numbers</h2>
+  <div class="stats">
+    <div class="stat"><strong>70</strong><span>books and articles</span></div>
+    <div class="stat"><strong>28,800</strong><span>searchable passages</span></div>
+    <div class="stat"><strong>118</strong><span>concepts to teach</span></div>
+    <div class="stat"><strong>6</strong><span>subject areas</span></div>
+  </div>
+  <p>Subjects: Politics, History, Islam, Psychology, Science and Geopolitics. Figures are from the live library in November 2026.</p>
+</section>
+
+<section>
+  <h2>Constraints and trade-offs</h2>
+  <p>LUMIO started with a local AI model on my own computer, which meant new lessons only appeared while my machine was on. I also had no budget for paid services.</p>
+  <ul>
+    <li><strong>Hosted AI as an option.</strong> A single setting switches the lesson writer from a local model to a hosted one, with a cheaper model for small decisions such as choosing the next topic.</li>
+    <li><strong>A reserve of written lessons.</strong> With a small group of readers, lessons can be written ahead of time from the real library and stored, then released automatically as readers finish.</li>
+    <li><strong>Honest limits.</strong> The library leans towards older books, so modern topics are thin. Open textbooks are the planned way to widen it.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What I learned</h2>
+  <ul>
+    <li>Constraints improve the product: designing for “the AI is off” produced a system that fails gracefully.</li>
+    <li>Trust is a feature. Showing sources and dropping unverifiable quotes matters more to a reader than a clever lesson.</li>
+    <li>A product that ends is easier to return to than one that never does.</li>
+  </ul>
+  <h3>Next</h3>
+  <ul>
+    <li>Watch five to ten real readers go from sign-up to a finished first lesson, and measure day-two and day-seven return.</li>
+    <li>Add reminders, offline reading and series of related lessons.</li>
+    <li>Widen the library with open-licence textbooks for modern subjects.</li>
+  </ul>
+</section>
+
+<footer>LUMIO · Product design and build · 2026</footer>
+</div>
+</body>
+</html>
