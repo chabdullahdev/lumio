@@ -500,6 +500,7 @@ function toContent(lesson: SampleLesson): LessonContent {
     isSample: true,
     blocks: lesson.blocks,
     takeaways: lesson.takeaways,
+    reflection: '',
     sources: lesson.sources,
   };
 }

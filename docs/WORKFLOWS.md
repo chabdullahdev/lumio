@@ -385,3 +385,29 @@ sign-up links also return to `/app/`.
 - No `.env` or keystore in git.
 - Ollama stays on loopback.
 - Never claim a feature works without running it.
+
+
+## Adding a book without being able to open it first
+
+When you add a Gutenberg number to `BOOKS` in `backend/src/library/catalog.ts` and have not
+checked it yourself, set `expectInTitle` (a short, case-insensitive pattern such as
+`'wealth of nations'`). Ingestion then refuses to store the book if the downloaded file's own
+title does not match, so a wrong number can never be saved under another book's name and licence.
+
+The November 2026 expansion added six books this way (The Republic, The Wealth of Nations,
+The Communist Manifesto, Common Sense, The Varieties of Religious Experience, The Souls of
+Black Folk) with eight new concepts. They are only in the catalog until you run, from `backend/`:
+
+```bash
+npm run ingest -- --only 1497,3300,61,147,621,408          # dry run, shows passage counts
+npm run ingest -- --apply --only 1497,3300,61,147,621,408  # save to Supabase
+```
+
+(The development sandbox cannot reach gutenberg.org, so these were not downloaded there.)
+
+## Applying the November 2026 database change
+
+`supabase/migrations/20261120090000_17_reflections_and_reports.sql` adds the tables for reflection
+notes and problem reports. Apply it to your Supabase project before using the new reader buttons;
+until then reading still works and notes simply do not save. Read reports with the service key:
+`select * from lesson_reports order by created_at desc;`

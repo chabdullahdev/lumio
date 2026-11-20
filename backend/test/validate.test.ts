@@ -159,3 +159,76 @@ test('a lesson whose takeaways and concepts were nested in blocks now validates 
   const result = validateGeneratedLesson(broken, plan);
   assert.equal(result.ok, true);
 });
+
+// ---- reader extras (v3 prompt) ---------------------------------------------
+
+const quotePlan: LessonPlan = {
+  ...plan,
+  passages: [
+    {
+      id: 1,
+      content: 'It is better to be feared than loved, if one cannot be both. In 1513 he wrote this.',
+      words: 18,
+      sourceId: 's-1',
+      sourceTitle: 'The Prince',
+      authors: ['Niccolò Machiavelli'],
+      publishedYear: 1532,
+      licenseType: 'public_domain',
+      sourceUrl: null,
+    },
+  ],
+  sourceWords: 18,
+};
+
+test('keeps a pull quote that is copied word for word from an extract', () => {
+  const lesson = {
+    ...validLesson(),
+    big_idea: 'In this lesson you will learn how rulers think about fear.',
+    pull_quote: 'It is better to be feared than loved, if one cannot be both.',
+    why_it_matters: 'The same trade-off between respect and affection still shows up at work and at home.',
+    try_this: 'Notice one moment today when you choose being liked over being clear.',
+    reflection_question: 'When have you chosen respect over approval?',
+  };
+  const result = validateGeneratedLesson(lesson, quotePlan);
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.deepEqual(result.lesson.extras.pullQuote, {
+      text: 'It is better to be feared than loved, if one cannot be both.',
+      source: 'The Prince',
+    });
+    assert.ok(result.lesson.extras.bigIdea);
+    assert.ok(result.lesson.extras.reflectionQuestion);
+  }
+});
+
+test('drops an invented pull quote instead of failing the lesson', () => {
+  const result = validateGeneratedLesson(
+    { ...validLesson(), pull_quote: 'Power belongs to whoever is bold enough to take it for themselves.' },
+    quotePlan,
+  );
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.lesson.extras.pullQuote, null);
+});
+
+test('a lesson without any extras is still valid', () => {
+  const result = validateGeneratedLesson(validLesson(), plan);
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.lesson.extras.bigIdea, null);
+    assert.equal(result.lesson.extras.tryThis, null);
+  }
+});
+
+test('rejects a lesson that states several numbers found in no extract', () => {
+  const lesson = validLesson();
+  (lesson.blocks as { type: string; text: string }[])[1].text += ' The war lasted 1847 days and cost 3200 lives.';
+  const result = validateGeneratedLesson(lesson, quotePlan);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.errors.some(error => error.includes('numbers that are not in the extracts')));
+});
+
+test('accepts numbers that appear in an extract', () => {
+  const lesson = validLesson();
+  (lesson.blocks as { type: string; text: string }[])[1].text += ' He wrote it in 1513.';
+  assert.equal(validateGeneratedLesson(lesson, quotePlan).ok, true);
+});

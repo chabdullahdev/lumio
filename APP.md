@@ -30,6 +30,17 @@ in-app updater were removed.
 People who want to learn regularly but don't want to search for books, build a
 curriculum, or feel bad about missing a day.
 
+## Inside a lesson (November 2026)
+
+Each lesson is about 15 minutes and now has: a **big idea** at the top, a short
+**pull quote** copied word for word from the book (kept only if it really appears in
+the source), a **why this matters today** paragraph, a **try this today** step and
+one **reflection question**. The reader's answer is saved to their notebook. Readers
+can switch to a **short version**, **listen** to the lesson read aloud (the browser's
+own voice), change the **text size**, and **report a problem**. Home shows a daily
+"Do you still remember?" card from the notebook. The lesson writer also rejects
+lessons that state several numbers that appear in none of the source extracts.
+
 ## Screens (built)
 
 1. Welcome / sign in — email + password, or explore sample lessons
@@ -38,7 +49,7 @@ curriculum, or feel bad about missing a day.
 4. Reader — block-by-block reading, progress saved as you go
 5. Takeaways / completion — key takeaways, sources, completion summary
 6. Explore — selected topics and their next available lessons
-7. Notebook — every takeaway from finished lessons, searchable
+7. Notebook — every takeaway and your own notes from finished lessons, searchable
 8. Profile — interests, reading time, reminders, streak history, install prompt
 
 The app has two data modes. **Sample mode** (bundled, clearly-labelled

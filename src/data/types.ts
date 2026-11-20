@@ -15,7 +15,13 @@ export type Topic = {
 export type LessonBlock =
   | { type: 'heading'; text: string }
   | { type: 'paragraph'; text: string }
-  | { type: 'quote'; text: string; attribution?: string };
+  | { type: 'quote'; text: string; attribution?: string }
+  /** A highlighted box: the big idea, something to try, or a reflection question. */
+  | { type: 'callout'; kind: CalloutKind; text: string };
+
+export type CalloutKind = 'big_idea' | 'try_this' | 'reflection';
+
+export type ReportReason = 'inaccurate' | 'confusing' | 'offensive' | 'other';
 
 export type SourceUsage = 'direct_quote' | 'paraphrase' | 'synthesis';
 
@@ -44,6 +50,8 @@ export type LessonContent = LessonSummary & {
   blocks: LessonBlock[];
   takeaways: string[];
   sources: LessonSourceRef[];
+  /** The reader's saved answer to the reflection question (empty if none). */
+  reflection: string;
 };
 
 export type QueueStatus = 'pending' | 'active' | 'completed';
@@ -95,6 +103,8 @@ export type NotebookEntry = {
   categoryName: string | null;
   completedAt: string;
   takeaways: string[];
+  /** The reader's own reflection answer for this lesson, if they wrote one. */
+  reflection: string;
 };
 
 export type CompletionSummary = {
@@ -124,4 +134,8 @@ export interface LumioApi {
   completeLesson(lessonId: string): Promise<CompletionSummary>;
   /** Takeaways from finished lessons, newest first (at most 100 lessons). */
   getNotebook(): Promise<NotebookEntry[]>;
+  /** Save (or clear, with an empty string) the reader's reflection answer. */
+  saveReflection(lessonId: string, answer: string): Promise<void>;
+  /** Tell the team something is wrong with a lesson. */
+  reportLesson(lessonId: string, reason: ReportReason, details?: string): Promise<void>;
 }

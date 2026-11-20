@@ -23,6 +23,7 @@ import type {
   NotebookEntry,
   ProfileSnapshot,
   QueueItem,
+  ReportReason,
   QueueStatus,
   SourceUsage,
   Streak,
@@ -104,6 +105,11 @@ function parseBlocks(content: unknown): LessonBlock[] {
       blocks.push({ type: 'paragraph', text });
     } else if (block.type === 'quote') {
       blocks.push({ type: 'quote', text, attribution: str(block.attribution) ?? undefined });
+    } else if (
+      block.type === 'callout' &&
+      (block.kind === 'big_idea' || block.kind === 'try_this' || block.kind === 'reflection')
+    ) {
+      blocks.push({ type: 'callout', kind: block.kind, text });
     }
     // Unknown block types are dropped rather than rendered incorrectly.
   }
@@ -418,7 +424,7 @@ export const supabaseApi: LumioApi = {
   async getLesson(lessonId: string): Promise<LessonContent> {
     const userId = await requireUserId();
     const supabase = getSupabase();
-    const [lessonResult, takeawaysResult, sourcesResult] = await Promise.all([
+    const [lessonResult, takeawaysResult, sourcesResult, reflectionResult] = await Promise.all([
       supabase
         .from('lessons')
         .select('id, title, summary, estimated_minutes, content, categories(name)')
@@ -437,6 +443,12 @@ export const supabaseApi: LumioApi = {
         )
         .eq('lesson_id', lessonId)
         .order('sort_order'),
+      supabase
+        .from('lesson_reflections')
+        .select('answer')
+        .eq('lesson_id', lessonId)
+        .eq('user_id', userId)
+        .maybeSingle(),
     ]);
     unwrap(lessonResult.data, lessonResult.error, 'Could not load the lesson');
     unwrap(takeawaysResult.data, takeawaysResult.error, 'Could not load the takeaways');
@@ -466,6 +478,8 @@ export const supabaseApi: LumioApi = {
       blocks,
       takeaways,
       sources,
+      // A missing reflection (or the table not being migrated yet) never blocks reading.
+      reflection: reflectionResult.error ? '' : (str(asRow(reflectionResult.data)?.answer) ?? ''),
     };
   },
 
@@ -552,10 +566,21 @@ export const supabaseApi: LumioApi = {
       return [];
     }
     const ids = done.map(item => item.lessonId);
-    const [lessonsResult, takeawaysResult] = await Promise.all([
+    const [lessonsResult, takeawaysResult, reflectionsResult] = await Promise.all([
       supabase.from('lessons').select('id, title, categories(name)').eq('user_id', userId).in('id', ids),
       supabase.from('lesson_takeaways').select('lesson_id, position, text').in('lesson_id', ids).order('position'),
+      supabase.from('lesson_reflections').select('lesson_id, answer').eq('user_id', userId).in('lesson_id', ids),
     ]);
+    const reflections = new Map<string, string>();
+    if (!reflectionsResult.error) {
+      for (const row of asArray(reflectionsResult.data).map(asRow)) {
+        const lessonId = row ? str(row.lesson_id) : null;
+        const answer = row ? str(row.answer) : null;
+        if (lessonId && answer) {
+          reflections.set(lessonId, answer);
+        }
+      }
+    }
     unwrap(lessonsResult.data, lessonsResult.error, 'Could not load your notebook lessons');
     unwrap(takeawaysResult.data, takeawaysResult.error, 'Could not load your takeaways');
     const lessons = new Map<string, Row>();
@@ -587,9 +612,31 @@ export const supabaseApi: LumioApi = {
           categoryName: str(asRow(lesson.categories)?.name),
           completedAt: item.completedAt,
           takeaways: kept,
+          reflection: reflections.get(item.lessonId) ?? '',
         },
       ];
     });
+  },
+
+  async saveReflection(lessonId: string, answer: string): Promise<void> {
+    const userId = await requireUserId();
+    const { error } = await getSupabase()
+      .from('lesson_reflections')
+      .upsert({ user_id: userId, lesson_id: lessonId, answer: answer.trim().slice(0, 4000) }, { onConflict: 'user_id,lesson_id' });
+    if (error) {
+      throw new Error(`Could not save your note: ${error.message}`);
+    }
+  },
+
+  async reportLesson(lessonId: string, reason: ReportReason, details?: string): Promise<void> {
+    const userId = await requireUserId();
+    const trimmed = details?.trim().slice(0, 1000);
+    const { error } = await getSupabase()
+      .from('lesson_reports')
+      .insert({ user_id: userId, lesson_id: lessonId, reason, details: trimmed ? trimmed : null });
+    if (error) {
+      throw new Error(`Could not send your report: ${error.message}`);
+    }
   },
 
   async completeLesson(lessonId: string): Promise<CompletionSummary> {

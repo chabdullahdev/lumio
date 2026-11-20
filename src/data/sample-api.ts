@@ -25,6 +25,7 @@ import type {
   ProfileSnapshot,
   QueueItem,
   QueueStatus,
+  ReportReason,
   Streak,
   Topic,
 } from './types';
@@ -49,6 +50,8 @@ type SampleDb = {
   progress: Record<string, StoredProgress>;
   activity: Record<string, number>;
   streak: Streak;
+  reflections: Record<string, string>;
+  reports: { lessonId: string; reason: ReportReason; details: string | null }[];
 };
 
 const EMPTY_DB: SampleDb = {
@@ -60,6 +63,8 @@ const EMPTY_DB: SampleDb = {
   progress: {},
   activity: {},
   streak: { current: 0, longest: 0, lastCompletedOn: null },
+  reflections: {},
+  reports: [],
 };
 
 async function loadDb(): Promise<SampleDb> {
@@ -261,7 +266,8 @@ export const sampleApi: LumioApi = {
     if (!lesson) {
       throw new Error('Lesson not found.');
     }
-    return lesson;
+    const db = await loadDb();
+    return { ...lesson, reflection: db.reflections[lessonId] ?? '' };
   },
 
   async getNotebook(): Promise<NotebookEntry[]> {
@@ -280,6 +286,7 @@ export const sampleApi: LumioApi = {
             categoryName: lesson.categoryName,
             completedAt: p.completedAt,
             takeaways: lesson.takeaways,
+            reflection: db.reflections[lessonId] ?? '',
           },
         ];
       })
@@ -324,6 +331,16 @@ export const sampleApi: LumioApi = {
         },
       },
     });
+  },
+
+  async saveReflection(lessonId: string, answer: string): Promise<void> {
+    const db = await loadDb();
+    await saveDb({ ...db, reflections: { ...db.reflections, [lessonId]: answer.trim().slice(0, 4000) } });
+  },
+
+  async reportLesson(lessonId: string, reason: ReportReason, details?: string): Promise<void> {
+    const db = await loadDb();
+    await saveDb({ ...db, reports: [...db.reports, { lessonId, reason, details: details?.trim() || null }] });
   },
 
   async completeLesson(lessonId: string): Promise<CompletionSummary> {

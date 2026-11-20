@@ -14,7 +14,7 @@ export function filterNotebook(entries: NotebookEntry[], query: string): Noteboo
   const needle = query.trim().toLowerCase();
   if (!needle) return entries;
   return entries.filter(entry =>
-    [entry.title, entry.categoryName ?? '', ...entry.takeaways].some(text => text.toLowerCase().includes(needle)),
+    [entry.title, entry.categoryName ?? '', entry.reflection, ...entry.takeaways].some(text => text.toLowerCase().includes(needle)),
   );
 }
 
@@ -31,7 +31,7 @@ export function Notebook({ go }: { go: (route: Route) => void }) {
   return (
     <main className="page">
       <h1>Your notebook</h1>
-      <Muted>Every idea you have kept, from every lesson you finished. Nothing to write — LUMIO fills it for you.</Muted>
+      <Muted>Every idea you have kept, from every lesson you finished, plus any notes you wrote. LUMIO fills it for you.</Muted>
       {data.length === 0 ? (
         <Card>
           <Empty title="Your notebook is empty" message="Finish a lesson and its key takeaways are saved here, ready to revisit whenever you want." actionLabel="Go to today’s lesson" onAction={() => go({ name: 'home' })} />
@@ -56,6 +56,13 @@ export function Notebook({ go }: { go: (route: Route) => void }) {
                   <li key={index}><span className="num">{index + 1}</span><span>{text}</span></li>
                 ))}
               </ol>
+              {entry.reflection ? (
+                <div className="my-note">
+                  <span className="muted small">Your note</span>
+                  <p>{entry.reflection}</p>
+                </div>
+              ) : null}
+              <button className="link-plain small" onClick={() => go({ name: 'lesson', id: entry.lessonId })}>Read the lesson again</button>
             </Card>
           ))}
         </>

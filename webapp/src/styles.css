@@ -168,3 +168,17 @@ input[type='search'] { width: 100%; }
 .install-card { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--accent); background: var(--accent-soft); }
 .install-card p { margin: 0; }
 .offline-banner { position: sticky; top: 0; z-index: 20; background: var(--warning); color: #111; text-align: center; padding: 6px 12px; font-size: 0.875rem; font-weight: 600; }
+
+/* ---- Lesson extras: callouts, reader tools, notes, review card ---------- */
+.reader-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+.chip { appearance: none; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 0 16px; min-height: 44px; font-weight: 600; cursor: pointer; }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); }
+.l-callout { margin: 20px 0; padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); }
+.l-callout strong { display: block; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); margin-bottom: 4px; }
+.l-callout p { margin: 0; }
+.l-callout-big_idea { background: var(--accent-soft); border-color: var(--accent); }
+.report { margin-top: 24px; display: grid; gap: 12px; }
+.report select, .report textarea, .field textarea { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+.my-note { border-left: 3px solid var(--accent); padding-left: 12px; }
+.my-note p { margin: 2px 0 0; white-space: pre-wrap; }
+.review-text { font-size: 1.05rem; }

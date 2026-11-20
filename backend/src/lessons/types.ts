@@ -35,7 +35,17 @@ export type LessonPlan = {
 };
 
 /** The lesson as validated from the model output (before persistence). */
+export type LessonExtras = {
+  bigIdea: string | null;
+  /** Copied verbatim from a plan passage; `source` is that passage's book. */
+  pullQuote: { text: string; source: string } | null;
+  whyItMatters: string | null;
+  tryThis: string | null;
+  reflectionQuestion: string | null;
+};
+
 export type GeneratedLesson = {
+  extras: LessonExtras;
   title: string;
   summary: string | null;
   blocks: { type: 'heading' | 'paragraph'; text: string }[];
@@ -44,6 +54,8 @@ export type GeneratedLesson = {
 };
 
 export type GeneratedLessonStats = {
+  /** Numbers (2+ digits) in the lesson that appear in none of the extracts. */
+  ungroundedNumbers?: string[];
   words: number;
   blocks: number;
   headings: number;

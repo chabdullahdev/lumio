@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import type { HomeSnapshot, QueueItem } from '@shared/data/types';
+import { deviceTimezone, localDateString } from '@shared/lib/dates';
+import { pickReviewCard } from '@shared/lib/lesson-tools';
 import { useSession } from '../session';
 import type { Route } from '../router';
 import { InstallCard } from '../pwa';
@@ -18,11 +21,17 @@ function streakLabel(streak: HomeSnapshot['streak']): string {
 
 export function Home({ go }: { go: (route: Route) => void }) {
   const { api, useSample } = useSession();
-  const { data, error, reload } = useLoad(() => Promise.all([api.getHome(), api.getProfile()]), [api]);
+  const { data, error, reload } = useLoad(
+    // The notebook only feeds the daily review card; if it fails, Home still works.
+    () => Promise.all([api.getHome(), api.getProfile(), api.getNotebook().catch(() => [])]),
+    [api],
+  );
+  const [revealed, setRevealed] = useState(false);
 
   if (error && !data) return <main className="page"><ErrorView message={error} onRetry={reload} /></main>;
   if (!data) return <main className="page"><Loading message="Preparing your lessons…" /></main>;
-  const [home, profile] = data;
+  const [home, profile, notebook] = data;
+  const review = pickReviewCard(notebook, localDateString(new Date(), deviceTimezone()));
   const firstName = profile.displayName?.trim().split(/\s+/)[0];
 
   return (
@@ -65,6 +74,23 @@ export function Home({ go }: { go: (route: Route) => void }) {
           />
         </Card>
       )}
+
+      {review ? (
+        <>
+          <SectionTitle>Do you still remember?</SectionTitle>
+          <Card>
+            <Muted>From “{review.lessonTitle}”</Muted>
+            {revealed ? (
+              <>
+                <p className="review-text">{review.takeaway}</p>
+                <button className="link-plain small" onClick={() => go({ name: 'notebook' })}>Open your notebook</button>
+              </>
+            ) : (
+              <Button variant="secondary" onClick={() => setRevealed(true)}>Show me the idea</Button>
+            )}
+          </Card>
+        </>
+      ) : null}
 
       {home.upcoming.length > 0 ? (
         <>
