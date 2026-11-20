@@ -20,9 +20,10 @@ The sample quote in the phone preview is a real sentence from the stored text of
 ## SEO and sharing
 
 - `index.html` carries the title, description, keywords, canonical URL, Open Graph and Twitter
-  tags, and JSON-LD (Organization, Person, WebSite, MobileApplication, FAQPage). The FAQPage
+  tags, and JSON-LD (Organization, Person, WebSite, WebApplication, FAQPage). The FAQPage
   JSON-LD must always match the visible FAQ text word for word.
-- `robots.txt`, `sitemap.xml` and `llms.txt` are served from the site root.
+- `robots.txt`, `sitemap.xml` and `llms.txt` are served from the site root. `/app/` is kept out of search with a
+  `noindex` tag in `web/app/index.html`; do not also block it in `robots.txt`, or Google cannot read the tag.
   Update the `lastmod` dates in `sitemap.xml` when pages change.
 - The share card is `og-image.png` (1200x630). Its source is `scripts/og-image.html`: render that
   page at exactly 1200x630 (for example with a headless browser screenshot) to regenerate it.
